@@ -1,0 +1,9 @@
+header:
+  version: 14
+
+local_conf_header:
+  rm_work: |
+    # clear working directories of all recipes for to free more disk space
+    INHERIT += "rm_work"
+    # use RM_WORK_EXCLUDE for recipes that should not be cleaned
+    # RM_WORK_EXCLUDE += ""

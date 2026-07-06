@@ -1,0 +1,17 @@
+header:
+  version: 14
+  includes:
+    - kas/include/yfs-ros.yml
+    - kas/include/machines/orin-nano.yml
+
+machine: jetson-orin-nano-devkit-nvme
+target: ros2-image-sdktest
+
+local_conf_header:  
+  ros: |
+    IMAGE_INSTALL:append = " examples-rclcpp-minimal-publisher"
+  fix_partion_size: |
+    ## install resize2fs (TODO: fix tegra-storage-layout and remove this workaround)
+    ### run command  "sudo resize2fs /dev/nvme0n1p1" 
+    ### to grow partition to use all free disk space
+    IMAGE_INSTALL:append = " e2fsprogs-resize2fs"

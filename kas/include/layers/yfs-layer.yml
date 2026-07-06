@@ -1,0 +1,21 @@
+header:
+  version: 14
+  includes:
+    - kas/include/configs/common.yml
+    - kas/include/configs/rm_work.yml
+    - kas/include/layers/meta-virtualization.yml
+
+repos:
+  meta-yfs:
+    path: meta-yfs
+
+  meta-yfs-distro:
+    path: meta-yfs-distro
+
+local_conf_header:
+
+  ditro-options: |
+    NO_RECOMMENDATION = "1"
+
+    
+

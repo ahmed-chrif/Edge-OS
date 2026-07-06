@@ -1,0 +1,13 @@
+header:
+  version: 14
+  includes:
+    - kas/include/configs/common.yml
+    - kas/include/configs/rm_work.yml
+    - kas/include/layers/yfs-layer.yml
+    - kas/include/layers/ros2-humble.yml
+
+local_conf_header:
+  ditro-options: |
+    NO_RECOMMENDATION = "1"
+    
+distro: yfs

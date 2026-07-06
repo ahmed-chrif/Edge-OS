@@ -1,0 +1,9 @@
+header:
+  version: 14
+  includes:
+    - kas/include/layers/tegra.yml
+
+local_conf_header:
+  orin-nano: |
+    ## set default power profile to max
+    NVPMODEL_CONFIG_DEFAULT = "2"

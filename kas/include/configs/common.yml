@@ -1,0 +1,8 @@
+header:
+  version: 14
+  includes:
+    - kas/include/configs/local.yml
+    - kas/include/configs/shared.yml
+    - kas/include/layers/oe.yml
+
+distro: nodistro

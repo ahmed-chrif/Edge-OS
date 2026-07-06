@@ -1,0 +1,18 @@
+header:
+  version: 14
+
+repos:
+  meta-ros:
+    url: https://github.com/ros/meta-ros
+    branch: scarthgap
+    commit: 4aaaf8b98b05374be6ee26d18920f6a5c3e4cbbb
+    path: sources/meta-ros/
+    layers:
+      meta-ros-common:
+      meta-ros2:
+      meta-ros2-jazzy:
+
+local_conf_header:
+  ros2-jazzy: |
+    # add licenses "BSD" and "Creative-Commons-Zero-v1.0-Universal" that are used by some ros recipes 
+    LICENSE_PATH += "${TOPDIR}/../meta-yfs/files/common-licenses"

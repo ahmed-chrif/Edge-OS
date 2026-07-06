@@ -1,0 +1,62 @@
+header:
+  version: 14
+
+repos:
+  meta-python-ai:
+    url: https://github.com/zboszor/meta-python-ai
+    path: sources/meta-python-ai
+    branch: scarthgap
+    commit: 57dba41efc2a938f10a4120f6723dcb7baa68f26
+
+  meta-clang-revival:
+    url: https://github.com/zboszor/meta-clang-revival
+    path: sources/meta-clang-revival
+    branch: scarthgap
+    commit: f34e150f6def4f7a9226bad517b6f6b4dcadb516
+
+  meta-clang:
+    url: https://github.com/kraj/meta-clang
+    path: sources/meta-clang
+    branch: scarthgap
+    commit: 057ee563305e9484b29d02347aeafdadc5ea28ed
+
+local_conf_header:
+  meta-python-ai: |
+    ## enable FORTRAN for cross compiling python3-scipy
+    FORTRAN:forcevariable = ",fortran"
+    RUNTIMETARGET:append:pn-gcc-runtime = " libquadmath"
+    HOSTTOOLS += "gfortran"
+    ## set openblas config to allow python3-scipy to build and work
+    ### NOTE: remove 'affinity' from PACKAGECONFIG because i causes performance issues with pytorch
+    PACKAGECONFIG:pn-openblas = "lapack cblas dynarch"
+
+    ## use python3-lz4 from meta-python-ai layer (not meta-ros)
+    REQUIRED_VERSION_python3-lz4 = "4.%"
+    ## use python3-shapely from meta-python-ai layer (not meta-ros)
+    REQUIRED_VERSION_python3-shapely = "2.0.6"
+
+    ## use single provider for llvm and clang 
+    PREFERRED_PROVIDER_llvm = "clang"
+    PREFERRED_PROVIDER_llvm-native = "clang-native"
+    PREFERRED_PROVIDER_nativesdk-llvm = "nativesdk-clang"
+    PROVIDES:pn-clang = "llvm"
+    PROVIDES:pn-clang-native = "llvm-native"
+    PROVIDES:pn-nativesdk-clang = "nativesdk-llvm"
+
+    ## remove problematic boto libraries
+    RDEPENDS:python3-s3fs:remove = "python3-boto3"
+    RDEPENDS:python3-s3fs:remove = "python3-botocore"
+    RDEPENDS:python3-s3fs:remove = "python3-aiobotocore"
+    RDEPENDS:python3-awscli:remove = "python3-boto3"
+    RDEPENDS:python3-awscli:remove = "python3-botocore"
+    RDEPENDS:python3-awscli:remove = "python3-aiobotocore"
+
+#    ## use openblas recipe from meta-python-ai as provider for openblas (instead of lapack)
+#    PACKAGECONFIG:pn-openblas  = "lapack cblas affinity dynarch"
+#    PREFERRED_PROVIDER_openblas = "openblas"
+#    PREFERRED_PROVIDER_openblas-native = "openblas-native"
+#
+#    ## undo lapack_%.bbappend from meta-ros-common layer
+#    EXTRA_OECMAKE:remove:pn-lapack = "-DCBLAS=ON"
+#    PROVIDES:remove:pn-lapack = "openblas"
+

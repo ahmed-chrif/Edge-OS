@@ -1,0 +1,35 @@
+header:
+  version: 14
+
+local_conf_header:
+
+  root_user_password: |
+    ## allows logging in as root with the password 'root'
+    ## override or disable this in your kas configs if needed
+    INHERIT += "extrausers"
+    EXTRA_IMAGE_FEATURES += "allow-root-login"
+    EXTRA_USERS_PARAMS = "usermod -p '$(openssl passwd -6 root)' root;"
+
+  standard: |
+    CONF_VERSION = "2"
+
+  diskmon: |
+    BB_DISKMON_DIRS = "\
+        STOPTASKS,${TMPDIR},1G,100K \
+        STOPTASKS,${DL_DIR},1G,100K \
+        STOPTASKS,${SSTATE_DIR},1G,100K \
+        STOPTASKS,/tmp,100M,100K \
+        HALT,${TMPDIR},100M,1K \
+        HALT,${DL_DIR},100M,1K \
+        HALT,${SSTATE_DIR},100M,1K \
+        HALT,/tmp,10M,1K"
+
+  concurrency: |
+    PARALLEL_MAKE = "-j12"
+    BB_NUMBER_THREADS = "8"
+    
+  resource_management: |
+    BB_NICE_LEVEL = "19"
+    BB_PRESSURE_MAX_CPU = "750000"
+    BB_PRESSURE_MAX_IO = "400000"
+    BB_PRESSURE_MAX_MEMORY = "15000"

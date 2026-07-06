@@ -1,0 +1,6 @@
+docker/.env
+docker/.kas_gitconfig
+docker/.bash_history
+build
+sources
+.kas_shell_history

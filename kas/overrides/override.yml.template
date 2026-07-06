@@ -1,0 +1,13 @@
+# overrides can be used to force custom kas configs without editing kas files
+# example usage:
+# kas shell kas/images/test/core-image-minimal.yml:kas/overrides/override.yml
+
+header:
+  version: 14
+  
+local_conf_header:
+  # This section injects variables directly into your bitbake local.conf
+  concurrency: |
+    PARALLEL_MAKE = "-j6"
+    BB_NUMBER_THREADS = "6"
+    

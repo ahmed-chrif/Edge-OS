@@ -1,0 +1,9 @@
+header:
+  version: 14
+
+repos:
+  meta-stereolabs:
+    url: https://github.com/MedAziz218/meta-stereolabs.git
+    path: sources/meta-stereolabs
+    branch: scarthgap
+    commit: 13559d176c9f2b8ee86aab3cc1b48907a2e0ede9
