@@ -25,8 +25,9 @@ local_conf_header:
         HALT,/tmp,10M,1K"
 
   concurrency: |
-    PARALLEL_MAKE = "-j12"
-    BB_NUMBER_THREADS = "8"
+    BB_NUMBER_THREADS = "4"
+    PARALLEL_MAKE = "-j 4"
+    PARALLEL_MAKE:append = " -l 6"
     
   resource_management: |
     BB_NICE_LEVEL = "19"

@@ -6,4 +6,4 @@ repos:
     url: https://git.yoctoproject.org/meta-virtualization
     path: sources/meta-virtualization
     branch: scarthgap
-    commit: 3dd635f613f7299d986a8ab6bc9f584370f8ed1d
+    commit: 31fb0a22e0aa65b430a40fbc59dbf239eb8745aa
