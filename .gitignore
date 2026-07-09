@@ -5,3 +5,4 @@ build
 sources
 .kas_shell_history
 flashtest/
+flash_persistent/
