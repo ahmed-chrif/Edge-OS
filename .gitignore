@@ -5,6 +5,6 @@ build
 sources
 .kas_shell_history
 flash_data/
-flash*/
+flas*/
 testuda/
 extract/

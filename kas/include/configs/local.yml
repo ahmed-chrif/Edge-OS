@@ -29,8 +29,3 @@ local_conf_header:
     PARALLEL_MAKE = "-j 4"
     PARALLEL_MAKE:append = " -l 6"
     
-  resource_management: |
-    BB_NICE_LEVEL = "19"
-    BB_PRESSURE_MAX_CPU = "750000"
-    BB_PRESSURE_MAX_IO = "400000"
-    BB_PRESSURE_MAX_MEMORY = "15000"

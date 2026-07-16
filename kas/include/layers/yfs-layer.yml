@@ -11,7 +11,9 @@ repos:
 
   meta-yfs-distro:
     path: meta-yfs-distro
-
+  
+  meta-yfs-bsp:
+    path: meta-yfs-bsp
 local_conf_header:
 
   ditro-options: |
