@@ -1,13 +1,17 @@
 [Unit]
-Description=Format and Mount Persistent User Partition
+Description=Format and Mount Writable Var Partition
 DefaultDependencies=no
-After=udev.service
-Before=local-fs.target
+Conflicts=umount.target
+# Must run before local-fs.target so systemd can use /var immediately
+Before=local-fs.target sysinit.target
+# Wait for the storage device node to be created by udev
+After=systemd-udev-trigger.service
 
 [Service]
 Type=oneshot
+RemainAfterExit=yes
 ExecStart=/usr/sbin/format-persistent.sh
-RemainAfterExit=true
 
 [Install]
+# Force the system to wait for this mount during the local filesystem phase
 WantedBy=local-fs.target

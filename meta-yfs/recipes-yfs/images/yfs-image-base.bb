@@ -4,6 +4,7 @@ LICENSE = "MIT"
 
 inherit core-image
 inherit image_types_tegra
+inherit read-only-fs
 IMAGE_FEATURES += "\
     ssh-server-openssh \
     package-management \
