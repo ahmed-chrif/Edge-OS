@@ -1,8 +1,8 @@
 header:
   version: 14
   includes:
-    - kas/include/configs/common.yml
-    - kas/include/configs/rm_work.yml
+    - kas/include/configs/dev/common.yml
+    - kas/include/configs/dev/rm_work.yml
     - kas/include/layers/yfs-layer.yml
 
 local_conf_header:

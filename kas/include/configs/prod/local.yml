@@ -1,18 +1,12 @@
 header:
   version: 14
-
 local_conf_header:
 
-  root_user_password: |
-    ## allows logging in as root with the password 'root'
-    ## override or disable this in your kas configs if needed
-    INHERIT += "extrausers"
-    EXTRA_IMAGE_FEATURES += "allow-root-login"
-    EXTRA_USERS_PARAMS = "usermod -p '$(openssl passwd -6 root)' root;"
+  container: |
+    IMAGE_INSTALL:append:tegra = " nvidia-docker"
 
   standard: |
     CONF_VERSION = "2"
-
   diskmon: |
     BB_DISKMON_DIRS = "\
         STOPTASKS,${TMPDIR},1G,100K \

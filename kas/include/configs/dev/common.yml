@@ -1,0 +1,7 @@
+header:
+  version: 14
+  includes:
+    - kas/include/configs/dev/local.yml
+    - kas/include/configs/dev/debug.yml
+    - kas/include/configs/dev/shared.yml
+    - kas/include/layers/oe.yml
