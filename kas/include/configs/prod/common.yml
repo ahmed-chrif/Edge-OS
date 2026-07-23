@@ -1,0 +1,6 @@
+header:
+  version: 14
+  includes:
+    - kas/include/configs/prod/local.yml
+    - kas/include/configs/prod/shared.yml
+    - kas/include/layers/oe.yml

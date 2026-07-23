@@ -1,0 +1,21 @@
+header:
+  version: 14
+
+local_conf_header:
+
+  debug: |
+    ## allows logging in as root with password "root"
+    INHERIT += "extrausers"
+    EXTRA_IMAGE_FEATURES += "allow-root-login"
+    EXTRA_USERS_PARAMS = "usermod -p '$(openssl passwd -6 root)' root;"
+
+    IMAGE_FEATURES += "\
+        ssh-server-openssh \
+        package-management \
+        bash-completion-pkgs \
+        allow-root-login \
+        empty-root-password \
+        serial-autologin-root \
+    "
+
+    IMAGE_INSTALL:append:tegra = " l4t-usb-device-mode"

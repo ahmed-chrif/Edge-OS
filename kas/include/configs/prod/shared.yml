@@ -1,0 +1,11 @@
+header:
+  version: 14
+
+local_conf_header:
+  shared: |
+    ## SOURCE_MIRROR_URL ?= "file:///mnt/yocto/downloads-dir/"
+    ## INHERIT += "own-mirrors"
+    ## SSTATE_MIRRORS ?= "file://.* file:///mnt/yocto/sstate-cache/PATH;downloadfilename=PATH"
+
+    # SSTATE_DIR and dl DL_DIR are set through env variables of yocto-builder container
+
