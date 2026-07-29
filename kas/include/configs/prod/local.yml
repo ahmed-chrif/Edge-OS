@@ -6,7 +6,7 @@ local_conf_header:
     IMAGE_INSTALL:append:tegra = " nvidia-docker"
 
   standard: |
-    CONF_VERSION = "2"
+    CONF_VERSION = "2"  
   diskmon: |
     BB_DISKMON_DIRS = "\
         STOPTASKS,${TMPDIR},1G,100K \

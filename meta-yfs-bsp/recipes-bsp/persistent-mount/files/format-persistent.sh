@@ -15,9 +15,11 @@ if [ ! -b "$PART_DEV" ]; then
 fi
 
 # Verify if an ext4 signature exists, format if missing
+IS_FIRST_BOOT=0
 if ! blkid "$PART_DEV" | grep -q 'TYPE="ext4"'; then
     echo "First-time setup: Formatting $PART_DEV as ext4..."
     mkfs.ext4 -F "$PART_DEV"
+    IS_FIRST_BOOT=1
 fi
 
 # Mount the partition directly over /var
@@ -35,3 +37,12 @@ mkdir -p /var/log
 mkdir -p /var/tmp
 mkdir -p /var/lib/systemd
 chmod 1777 /var/tmp
+# === UPDATED: Seed factory extensions into their respective runtime folders ===
+if [ -d "/usr/share/factory-extensions" ]; then
+    echo "Seeding factory sysext images to /var/lib/extensions..."
+    cp -n /usr/share/factory-extensions/*.sysext.raw /var/lib/extensions/ 2>/dev/null || true
+
+    echo "Seeding factory confext images to /var/lib/confexts..."
+    cp -n /usr/share/factory-extensions/*.confext.raw /var/lib/confexts/ 2>/dev/null || true
+    cp -n /usr/share/factory-extensions/*.confext.raw /var/lib/confext/ 2>/dev/null || true
+fi
