@@ -31,12 +31,23 @@ echo "Ensuring systemd-sysext and system directory structure on /var..."
 mkdir -p /var/lib/extensions
 mkdir -p /var/lib/confexts
 mkdir -p /var/etc
-
 # Essential base system directories to prevent early-boot service crashes
 mkdir -p /var/log
 mkdir -p /var/tmp
 mkdir -p /var/lib/systemd
+mkdir -p /var/lib/dbus
+mkdir -p /var/lib/ssh          # <--- Persistent storage for SSH Host Keys
+chmod 0700 /var/lib/ssh
 chmod 1777 /var/tmp
+
+if [ ! -f /var/lib/machine-id ]; then
+    touch /var/lib/machine-id
+fi
+
+# Bind-mount or symlink /var/lib/machine-id over /etc/machine-id
+if [ -f /etc/machine-id ]; then
+    mount --bind /var/lib/machine-id /etc/machine-id
+fi
 # === UPDATED: Seed factory extensions into their respective runtime folders ===
 if [ -d "/usr/share/factory-extensions" ]; then
     echo "Seeding factory sysext images to /var/lib/extensions..."

@@ -1,14 +1,17 @@
 [Unit]
-Description=Volatile RAM Overlays for Read-Only Root
+Description=Volatile RAM Overlays for /usr and /opt
 DefaultDependencies=no
-# Run after sysext so the writable overlay sits at the absolute top of the stack
-After=systemd-sysext.service systemd-confext.service
+Conflicts=umount.target
+# CRITICAL: Must start AFTER format-persistent, systemd-sysext, and systemd-confext
+After=format-persistent.service systemd-sysext.service systemd-confext.service local-fs.target
+Requires=format-persistent.service
 Before=sysinit.target
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/sbin/volatile-overlays.sh
+ExecStart=/usr/sbin/volatile-overlays.sh start
+ExecStop=/usr/sbin/volatile-overlays.sh stop
 
 [Install]
 WantedBy=sysinit.target
