@@ -1,0 +1,23 @@
+[Unit]
+Description=EdgeOS merge extensions
+
+DefaultDependencies=no
+Requires=format-persistent.service
+After=local-fs.target format-persistent.service
+Before=sysinit.target systemd-tmpfiles-setup.service systemd-userdb-load-credentials.service
+Conflicts=shutdown.target initrd-switch-root.target
+Before=shutdown.target initrd-switch-root.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+TimeoutStartSec=90
+# Replaces 'avocadoctl refresh' with raw systemd binaries
+ExecStart=/usr/bin/systemd-sysext --mutable=ephemeral merge
+ExecStart=/usr/bin/systemd-confext --mutable=ephemeral merge
+# Replaces 'avocadoctl unmerge'
+ExecStop=-/usr/bin/systemd-sysext unmerge
+ExecStop=-/usr/bin/systemd-confext unmerge
+
+[Install]
+WantedBy=sysinit.target

@@ -1,9 +1,11 @@
 SUMMARY = "EdgeOS base immutable image"
 LICENSE = "MIT"
 inherit core-image image_types_tegra read-only-fs
+RM_WORK_EXCLUDE += "yfs-image-base"
 
 IMAGE_INSTALL:append = " \
     persistent-mount \
+    edgeos-extensions \
 "
 # Added edgeos-app-sysext and edgeos-app-confext-image dependencies
 do_rootfs[depends] += " \
@@ -36,52 +38,11 @@ setup_ssh_symlinks() {
     ln -sf ../../var/lib/ssh/ssh_host_ecdsa_key ${IMAGE_ROOTFS}/etc/ssh/ssh_host_ecdsa_key
     ln -sf ../../var/lib/ssh/ssh_host_ed25519_key ${IMAGE_ROOTFS}/etc/ssh/ssh_host_ed25519_key
 }
-
-ROOTFS_POSTPROCESS_COMMAND += "seed_factory_extensions; setup_ssh_symlinks; "
-setup_sysext_ordering() {
-    # Drop-in for systemd-sysext.service
-    mkdir -p ${IMAGE_ROOTFS}${sysconfdir}/systemd/system/systemd-sysext.service.d
-    cat << 'EOF' > ${IMAGE_ROOTFS}${sysconfdir}/systemd/system/systemd-sysext.service.d/override.conf
-[Unit]
-After=format-persistent.service
-Requires=format-persistent.service
-EOF
-
-    # Drop-in for systemd-confext.service
-    mkdir -p ${IMAGE_ROOTFS}${sysconfdir}/systemd/system/systemd-confext.service.d
-    cat << 'EOF' > ${IMAGE_ROOTFS}${sysconfdir}/systemd/system/systemd-confext.service.d/override.conf
-[Unit]
-After=format-persistent.service
-Requires=format-persistent.service
-setup_sysext_ordering() {
-    # 1. Drop-in for systemd-sysext.service (App Extensions)
-    mkdir -p ${IMAGE_ROOTFS}${sysconfdir}/systemd/system/systemd-sysext.service.d
-    cat << 'EOF' > ${IMAGE_ROOTFS}${sysconfdir}/systemd/system/systemd-sysext.service.d/override.conf
-[Unit]
-After=format-persistent.service
-Requires=format-persistent.service
-
-[Service]
-ExecStart=
-ExecStart=systemd-sysext --mutable=ephemeral merge
-EOF
-
-    # 2. Drop-in for systemd-confext.service (Config Extensions)
-    mkdir -p ${IMAGE_ROOTFS}${sysconfdir}/systemd/system/systemd-confext.service.d
-    cat << 'EOF' > ${IMAGE_ROOTFS}${sysconfdir}/systemd/system/systemd-confext.service.d/override.conf
-[Unit]
-After=format-persistent.service
-Requires=format-persistent.service
-
-[Service]
-ExecStart=
-ExecStart=systemd-confext --mutable=ephemeral merge
-EOF
-
-    # 3. FORCE ENABLE: Manually link them to sysinit.target to bypass the broken preset
-    mkdir -p ${IMAGE_ROOTFS}${sysconfdir}/systemd/system/sysinit.target.wants
-    ln -sf ${systemd_system_unitdir}/systemd-sysext.service ${IMAGE_ROOTFS}${sysconfdir}/systemd/system/sysinit.target.wants/systemd-sysext.service
-    ln -sf ${systemd_system_unitdir}/systemd-confext.service ${IMAGE_ROOTFS}${sysconfdir}/systemd/system/sysinit.target.wants/systemd-confext.service
+# Create a symlink to volatile/writable storage during rootfs assembly
+setup_readonly_machine_id() {
+    rm -f ${IMAGE_ROOTFS}/etc/machine-id
+    ln -sf /var/machine-id ${IMAGE_ROOTFS}/etc/machine-id
 }
 
-ROOTFS_POSTPROCESS_COMMAND += "setup_sysext_ordering; "
+ROOTFS_POSTPROCESS_COMMAND += "setup_readonly_machine_id; "
+ROOTFS_POSTPROCESS_COMMAND += "seed_factory_extensions; setup_ssh_symlinks; "

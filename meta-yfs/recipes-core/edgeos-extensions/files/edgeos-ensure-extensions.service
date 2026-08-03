@@ -1,0 +1,17 @@
+[Unit]
+Description=Reload manager and retrigger activation targets after EdgeOS extensions are merged
+BindsTo=edgeos-extension.service
+After=edgeos-extension.service
+DefaultDependencies=no
+Before=sysinit.target
+Conflicts=shutdown.target initrd-switch-root.target
+Before=shutdown.target initrd-switch-root.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/systemctl daemon-reload
+ExecStart=/bin/systemctl restart --no-block sockets.target timers.target paths.target multi-user.target
+
+[Install]
+WantedBy=sysinit.target
