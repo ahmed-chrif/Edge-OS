@@ -3,14 +3,13 @@ Description=Format and Mount Writable Var Partition
 DefaultDependencies=no
 Conflicts=umount.target
 After=systemd-udev-trigger.service
-# Explicitly run BEFORE systemd extension services 
-
 Before=local-fs.target sysinit.target systemd-sysext.service systemd-confext.service
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=/usr/sbin/format-persistent.sh
+ExecStartPost=/bin/systemd-tmpfiles --create /etc/tmpfiles.d/swupdate.conf
 
 [Install]
 WantedBy=local-fs.target

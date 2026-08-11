@@ -5,3 +5,8 @@ header:
     - kas/include/configs/dev/debug.yml
     - kas/include/configs/dev/shared.yml
     - kas/include/layers/oe.yml
+    - kas/include/layers/meta-swupdate.yml  
+
+local_conf_header:
+  swupdate_config: |
+    IMAGE_INSTALL:append = " swupdate swupdate-client swupdate-machine-config"

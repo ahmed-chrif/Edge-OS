@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edge-OS SWUpdate</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="header">
+        <div class="header-top">
+            <div class="logo-icon"></div>
+            <h1>FOCUS</h1>
+        </div>
+        <p>DRIVEN BY COMMITMENT</p>
+    </div>
+
+    <div class="container">
+        <div class="values">
+            <span>Edge-OS</span>
+            <span>OTA Update</span>
+            <span>Secure</span>
+        </div>
+
+        <div class="upload-section">
+            <h2>System Update</h2>
+            <p>Upload your .swu image to update the Edge-OS firmware.</p>
+
+            <label class="file-label" for="file-input" id="drop-zone">
+                Click to select or drop a .swu file here
+            </label>
+            <input type="file" id="file-input" accept=".swu">
+
+            <button id="upload-btn" disabled>Install Update</button>
+
+            <div id="progress-container">
+                <div id="progress-bar"></div>
+            </div>
+            <div id="status">Waiting for file...</div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

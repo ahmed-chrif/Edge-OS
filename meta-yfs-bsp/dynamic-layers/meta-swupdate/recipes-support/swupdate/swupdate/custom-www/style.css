@@ -1,0 +1,183 @@
+    :root {
+        /* Palette derived from image_8fc9bf.jpg */
+        --focus-blue-dark: #001a33;
+        --focus-blue-light: #004080;
+        --focus-yellow: #b89000;
+        --focus-yellow-hover: #d1a300;
+        --bg-dark: #121212;
+        --panel-bg: #1e1e1e;
+        --text-main: #ffffff;
+        --text-muted: #a0a0a0;
+        --success-color: #28a745;
+        --error-color: #dc3545;
+    }
+
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: var(--bg-dark);
+        color: var(--text-main);
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-height: 100vh;
+    }
+
+    /* Hero Header styling matching the website's top section */
+    .header {
+        background: linear-gradient(135deg, var(--focus-blue-dark) 0%, var(--focus-blue-light) 100%);
+        width: 100%;
+        padding: 40px 20px;
+        text-align: center;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+        border-bottom: 3px solid var(--focus-yellow);
+    }
+
+    .header-top {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 10px;
+    }
+
+    .logo-icon {
+        width: 0;
+        height: 0;
+        border-top: 15px solid transparent;
+        border-bottom: 15px solid transparent;
+        border-left: 25px solid var(--focus-yellow);
+    }
+
+    .header h1 {
+        margin: 0;
+        font-size: 2.5rem;
+        letter-spacing: 2px;
+        font-weight: 800;
+    }
+
+    .header p {
+        margin: 10px 0 0 0;
+        font-size: 1.2rem;
+        color: #e0e0e0;
+        font-weight: 300;
+    }
+
+    /* Main Container styling matching the dark lower section */
+    .container {
+        background: var(--panel-bg);
+        width: 100%;
+        max-width: 700px;
+        margin-top: -30px;
+        padding: 40px;
+        border-radius: 8px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        text-align: center;
+    }
+
+    .values {
+        display: flex;
+        justify-content: space-around;
+        font-size: 0.85rem;
+        color: var(--focus-yellow);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 30px;
+        border-bottom: 1px solid #333;
+        padding-bottom: 20px;
+        font-weight: 600;
+    }
+
+    .upload-section h2 {
+        margin-top: 0;
+        font-size: 2rem;
+        letter-spacing: 1px;
+    }
+
+    .upload-section p {
+        color: var(--text-muted);
+        margin-bottom: 30px;
+    }
+
+    input[type="file"] {
+        display: none;
+    }
+
+    .file-label {
+        display: block;
+        padding: 20px;
+        background-color: rgba(255, 255, 255, 0.05);
+        border: 2px dashed #444;
+        border-radius: 6px;
+        cursor: pointer;
+        width: 80%;
+        margin: 0 auto 25px auto;
+        transition: all 0.3s ease;
+        color: var(--text-muted);
+    }
+
+    .file-label:hover {
+        border-color: var(--focus-yellow);
+        background-color: rgba(184, 144, 0, 0.1);
+        color: var(--text-main);
+    }
+
+    button {
+        background-color: var(--focus-yellow);
+        color: #000;
+        border: none;
+        padding: 14px 40px;
+        font-size: 1.1rem;
+        font-weight: bold;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+        text-transform: uppercase;
+    }
+
+    button:hover {
+        background-color: var(--focus-yellow-hover);
+    }
+
+    button:disabled {
+        background-color: #555;
+        color: #888;
+        cursor: not-allowed;
+    }
+
+    #progress-container {
+        width: 100%;
+        background-color: #333;
+        border-radius: 4px;
+        margin-top: 30px;
+        display: none;
+        overflow: hidden;
+        height: 12px;
+    }
+
+    #progress-bar {
+        width: 0%;
+        height: 100%;
+        background-color: var(--focus-yellow);
+        transition: width 0.3s ease;
+    }
+
+    #status {
+        margin-top: 20px;
+        font-weight: bold;
+        font-size: 1.1rem;
+    }
+
+    #log {
+        margin-top: 20px;
+        background: #0a0a0a;
+        color: var(--text-muted);
+        padding: 15px;
+        border-radius: 4px;
+        height: 120px;
+        overflow-y: auto;
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 0.85rem;
+        text-align: left;
+        border: 1px solid #333;
+    }

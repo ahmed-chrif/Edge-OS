@@ -1,0 +1,13 @@
+[Unit]
+Description=SWUpdate Machine Configuration Generator
+After=setup-nv-boot-control.service format-persistent.service
+Requires=setup-nv-boot-control.service
+WantsMountsFor=/var
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=@LIBEXECDIR@/swupdate/swupdate-genconfig
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,20 @@
+globals:
+{
+    verbose = false;
+    loglevel = 3;
+    select = "system,slot_@BOOTSLOT@";
+};
+
+identify : (
+     { name = "swversion"; value = "@SWVERSION@" },
+     { name = "serialnumber"; value = "@SERIALNUMBER@" },
+     { name = "model"; value = "@MODEL@" }
+);
+
+webserver :
+{
+    document-root = "/www";
+    port = 8080;
+    timeout = 3600;
+    post_max_size = "2000M";
+};
