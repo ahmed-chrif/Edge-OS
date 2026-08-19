@@ -15,8 +15,8 @@ software =
                 );
                 files: (
                     {
-                        filename = "TEGRA_BL.Cap";
-                        path = "/boot/efi/EFI/UpdateCapsule/";
+                        filename = "tegra-bl.cap";
+                        path = "/boot/efi/EFI/UpdateCapsule/TEGRA_BL.Cap";
                         properties = {
                             create-destination = "true";
                             install-if-different = "true";
@@ -44,8 +44,8 @@ software =
                 );
                 files: (
                     {
-                        filename = "TEGRA_BL.Cap";
-                        path = "/boot/efi/EFI/UpdateCapsule/";
+                        filename = "tegra-bl.cap";
+                        path = "/boot/efi/EFI/UpdateCapsule/TEGRA_BL.Cap";
                         properties = {
                             create-destination = "true";
                             install-if-different = "true";

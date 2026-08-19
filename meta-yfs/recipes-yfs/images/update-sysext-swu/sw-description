@@ -1,19 +1,21 @@
-const software = {
-    version: "1.0",
-    "hardware-compatibility": ["1.0"],
-
-    files: [
-        {
-            filename: "my-new-app-sysext-jetson-orin-nano-devkit-nvme.sysext.raw",
-            path: "/var/lib/extensions/my-new-app.sysext.raw",
-        },
+{
+  "software": {
+    "version": "1.0",
+    "hardware-compatibility": [
+      "1.0"
     ],
-
-    scripts: [
-        {
-            filename: "update-sysext.sh",
-            type: "shellscript",
-            location: "postinstall",
-        },
+    "files": [
+      {
+        "filename": "my-new-app-sysext-jetson-orin-nano-devkit-nvme.sysext.raw",
+        "path": "/var/lib/extensions/my-new-app-v2.sysext.raw"
+      }
     ],
-};
+    "scripts": [
+      {
+        "filename": "update-sysext.sh",
+        "type": "shellscript",
+        "location": "postinstall"
+      }
+    ]
+  }
+}

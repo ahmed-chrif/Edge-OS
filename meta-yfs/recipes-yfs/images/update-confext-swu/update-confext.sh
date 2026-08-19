@@ -1,24 +1,23 @@
 #!/bin/sh
+set -e
 
-if [ "$1" = "preinst" ]; then
-    # Ensure persistent target directories exist before extraction
-    mkdir -p /var/lib/extensions
-    mkdir -p /var/lib/confexts
-    exit 0
-fi
+TARGET_DIR="/var/lib/confexts"
+NEW_IMAGE="my-new-app-v2.confext.raw"
 
-if [ "$1" = "postinst" ]; then
-    echo "Refreshing systemd-sysext..."
-    systemd-sysext refresh || echo "WARNING: systemd-sysext refresh failed"
+echo "Stopping application service..."
+systemctl stop my-new-app.service || true
 
-    echo "Refreshing systemd-confext..."
-    systemd-confext refresh || echo "WARNING: systemd-confext refresh failed"
+echo "Unmerging active confext overlays..."
+systemd-confext unmerge || true
 
-    # Reload systemd manager and restart application to apply new binaries & port (8080 -> 9000)
-    systemctl daemon-reload
-    systemctl restart my-new-app.service || echo "WARNING: my-new-app.service restart failed"
+# Safely delete older my-new-app images EXCEPT the newly unpacked version
+find "$TARGET_DIR" -maxdepth 1 -type f -name "my-new-app*.confext.raw" ! -name "$NEW_IMAGE" -exec rm -vf {} +
 
-    exit 0
-fi
+echo "Refreshing systemd confext overlays..."
+systemd-confext --mutable=ephemeral refresh
+
+echo "Restarting application service..."
+systemctl daemon-reload
+systemctl restart my-new-app.service || true
 
 exit 0

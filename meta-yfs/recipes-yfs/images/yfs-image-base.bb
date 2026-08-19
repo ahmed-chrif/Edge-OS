@@ -23,7 +23,6 @@ EXTRA_USERS_PARAMS:append = " \
     useradd -r -g sshd -d /var/empty -s /sbin/nologin -c 'Privilege-separated SSH' sshd; \
 "
 # Exclude the app from main rootfs and pull extension targets
-PACKAGE_EXCLUDE += "my-new-app"
 do_rootfs[depends] += " \
     my-new-app-sysext:do_image_complete \
     my-new-app-confext:do_image_complete \

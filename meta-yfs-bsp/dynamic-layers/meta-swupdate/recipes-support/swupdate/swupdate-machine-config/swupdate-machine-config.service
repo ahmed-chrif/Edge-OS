@@ -3,6 +3,7 @@ Description=SWUpdate Machine Configuration Generator
 After=setup-nv-boot-control.service format-persistent.service
 Requires=setup-nv-boot-control.service
 WantsMountsFor=/var
+Before=swupdate-web.service swupdate.service
 
 [Service]
 Type=oneshot

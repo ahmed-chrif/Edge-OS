@@ -3,9 +3,10 @@ LICENSE = "MIT"
 LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/MIT;md5=0835ade698e0bcf8506ecda2f7b4f302"
 
 require tegra-swupdate.inc
+
 inherit systemd
 
-SRC_URI = "\
+SRC_URI = " \
     file://swupdate.cfg.in \
     file://swupdate-genconfig.sh.in \
     file://swupdate-mods.conf.in \
@@ -34,7 +35,7 @@ do_compile() {
         -e "s,@TEGRA_SWUPDATE_LAST_CAPSULE_UPDATE_COMPLETE_SLOT_MARKER@,${TEGRA_SWUPDATE_LAST_CAPSULE_UPDATE_COMPLETE_SLOT_MARKER},g" \
         ${S}/swupdate-genconfig.sh.in > ${B}/swupdate-genconfig.sh
         
-    echo "tegra-bootloader-capsule    ${TEGRA_SWUPDATE_BOOTLOADER_VERSION}" > ${B}/sw-versions-thisslot
+    echo "tegra-bootloader-capsule ${TEGRA_SWUPDATE_BOOTLOADER_VERSION}" > ${B}/sw-versions-thisslot
     
     TEGRA_SWUPDATE_LAST_CAPSULE_UPDATE_COMPLETE_SLOT_MARKER_DIR_DEPENDS=""
     if [ -n "${TEGRA_SWUPDATE_LAST_CAPSULE_UPDATE_COMPLETE_SLOT_MARKER}" ]; then
@@ -44,15 +45,11 @@ do_compile() {
     sed -e "s,@TEGRA_SWUPDATE_LAST_CAPSULE_UPDATE_COMPLETE_SLOT_MARKER_DIR_DEPENDS@,${TEGRA_SWUPDATE_LAST_CAPSULE_UPDATE_COMPLETE_SLOT_MARKER_DIR_DEPENDS},g" \
         -e "s,@LIBEXECDIR@,${libexecdir},g" \
         ${S}/swupdate-mods.conf.in > ${B}/swupdate-mods.conf
-}
 
-do_install:append:secureboot() {
-    install -m 0644 ${S}/swupdate.pem ${D}${datadir}/swupdate/
+    # Process @LIBEXECDIR@ inside the systemd service unit
+    sed -e "s,@LIBEXECDIR@,${libexecdir},g" \
+        ${S}/swupdate-machine-config.service > ${B}/swupdate-machine-config.service
 }
-
-PACKAGE_ARCH = "${MACHINE_ARCH}"
-EXTRADEPS = "tegra-redundant-boot util-linux-mountpoint util-linux-blkid"
-RDEPENDS:${PN} += "${EXTRADEPS}"
 
 do_install() {
     install -d ${D}${sysconfdir}
@@ -61,6 +58,7 @@ do_install() {
 
     install -d ${D}${datadir}/swupdate
     install -m 0644 ${B}/swupdate.cfg.in ${D}${datadir}/swupdate/
+    install -m 0644 ${B}/sw-versions-thisslot ${D}${datadir}/swupdate/
 
     install -d ${D}${libexecdir}/swupdate
     install -m 0755 ${B}/swupdate-genconfig.sh ${D}${libexecdir}/swupdate/swupdate-genconfig
@@ -68,17 +66,26 @@ do_install() {
     install -d ${D}${sysconfdir}/systemd/system/swupdate.service.d
     install -m 0644 ${B}/swupdate-mods.conf ${D}${sysconfdir}/systemd/system/swupdate.service.d/
 
-    install -m 0644 ${B}/sw-versions-thisslot ${D}${datadir}/swupdate/
     ln -s /run/swupdate/sw-versions ${D}${sysconfdir}/sw-versions
 
     install -d ${D}${sysconfdir}/tmpfiles.d
     install -m 0644 ${S}/swupdate-tmpfiles.conf ${D}${sysconfdir}/tmpfiles.d/swupdate.conf
 
+    # Install processed service unit from build directory ${B}
     install -d ${D}${systemd_system_unitdir}
-    install -m 0644 ${S}/swupdate-machine-config.service ${D}${systemd_system_unitdir}/
+    install -m 0644 ${B}/swupdate-machine-config.service ${D}${systemd_system_unitdir}/
 }
 
-FILES:${PN} += "\
+do_install:append:secureboot() {
+    install -m 0644 ${S}/swupdate.pem ${D}${datadir}/swupdate/
+}
+
+PACKAGE_ARCH = "${MACHINE_ARCH}"
+
+EXTRADEPS = "tegra-redundant-boot util-linux-mountpoint util-linux-blkid"
+RDEPENDS:${PN} += "${EXTRADEPS}"
+
+FILES:${PN} += " \
     ${datadir}/swupdate \
     ${sysconfdir}/sw-versions \
     ${sysconfdir}/tmpfiles.d/swupdate.conf \

@@ -13,6 +13,15 @@ import sys
 import threading
 import time
 
+WORKDIR = "/usr/lib/my-new-app"
+if os.path.exists(WORKDIR):
+    try:
+        os.chdir(WORKDIR)
+    except Exception:
+        os.chdir("/tmp")
+else:
+    os.chdir("/tmp")
+
 STATE_FILE = "/var/lib/my-new-app/state.json"
 CONFIG_FILE = "/etc/my-new-app/my-new-app.conf"
 DEMO_FILE = "/tmp/demo.txt"
@@ -73,6 +82,7 @@ def get_boot_slot():
 
     return "UNKNOWN"
 
+
 def get_os_version():
     try:
         with open("/etc/os-release", "r") as f:
@@ -91,7 +101,7 @@ def get_os_version():
 
 
 def get_app_version():
-    app_ver_file = "/usr/lib/my-new-app/version"
+    app_ver_file = os.path.join(WORKDIR, "version")
     if os.path.exists(app_ver_file):
         try:
             with open(app_ver_file, "r") as f:
@@ -195,6 +205,11 @@ def read_persistent_state():
 
 
 class DashboardHandler(http.server.SimpleHTTPRequestHandler):
+    def __init__(self, *args, **kwargs):
+        # Override directory initialization to prevent os.getcwd() crashes
+        target_dir = WORKDIR if os.path.exists(WORKDIR) else "/tmp"
+        super().__init__(*args, directory=target_dir, **kwargs)
+
     def do_GET(self):
         if self.path == "/api/status":
             config = load_config()

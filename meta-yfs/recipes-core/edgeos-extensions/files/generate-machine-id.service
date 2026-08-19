@@ -1,9 +1,9 @@
 [Unit]
 Description=Generate Unique Machine ID on First Boot
 DefaultDependencies=no
-# Must run after your extensions are mounted so /etc is writable
 After=edgeos-extension.service
-Before=sysinit.target local-fs.target dbus.service
+# REMOVED local-fs.target from the line below to break the cycle:
+Before=sysinit.target dbus.service
 ConditionPathEmpty=/etc/machine-id
 
 [Service]

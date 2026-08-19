@@ -1,20 +1,15 @@
 [Unit]
 Description=EdgeOS Application Web Service
-After=network-online.target persistent-mount.service
-Wants=network-online.target persistent-mount.service
-
-# Configure systemd to trigger a system reboot if the unit fails repeatedly
-StartLimitIntervalSec=20
-StartLimitBurst=2
-StartLimitAction=reboot
+After=network.target local-fs.target edgeos-extension.service
+Requires=edgeos-extension.service
 
 [Service]
 Type=simple
 WorkingDirectory=/usr/lib/my-new-app
-# ExecStartPre remains removed/disabled here so restarting without /tmp/demo.txt fails immediately
+ExecStartPre=/bin/sh -c 'if [ ! -f /tmp/demo.txt ]; then touch /tmp/demo.txt; fi'
 ExecStart=/usr/bin/python3 /usr/lib/my-new-app/main.py
-Restart=on-failure
-RestartSec=2
+Restart=always
+RestartSec=3s
 
 [Install]
 WantedBy=multi-user.target

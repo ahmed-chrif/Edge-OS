@@ -8,11 +8,11 @@ SRC_URI = " \
 "
 
 S = "${WORKDIR}"
-
 inherit systemd
 
 SYSTEMD_PACKAGES = "${PN}"
 SYSTEMD_SERVICE:${PN} = "my-new-app.service"
+# Fix 1: Use package-specific override syntax
 SYSTEMD_AUTO_ENABLE:${PN} = "enable"
 
 RDEPENDS:${PN} = " \
@@ -24,7 +24,9 @@ RDEPENDS:${PN} = " \
 do_install() {
     install -d ${D}${prefix}/lib/my-new-app
     install -m 0755 ${S}/main.py ${D}${prefix}/lib/my-new-app/main.py
-    echo "1.0" > ${D}${prefix}/lib/my-new-app/version
+    
+    # Fix 2: Use ${PV} so the version updates automatically when you rename the .bb file
+    echo "${PV}" > ${D}${prefix}/lib/my-new-app/version
 
     install -d ${D}${systemd_system_unitdir}
     install -m 0644 ${S}/my-new-app.service ${D}${systemd_system_unitdir}/my-new-app.service

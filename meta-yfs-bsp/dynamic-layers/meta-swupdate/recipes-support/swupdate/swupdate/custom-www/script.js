@@ -18,31 +18,57 @@ uploadBtn.addEventListener('click', () => {
     const file = fileInput.files[0];
     if (!file) return;
 
+    // Detect extension type from filename
+    const filename = file.name.toLowerCase();
+    const isExtension = filename.includes('sysext') || filename.includes('confext');
+
     uploadBtn.disabled = true;
     fileInput.disabled = true;
     progressContainer.style.display = 'block';
     statusText.innerText = 'Uploading...';
 
-    const xhr = new XMLHttpRequest();
+    // 1. Construct multi-part form data
+    const formData = new FormData();
+    formData.append('file', file);
 
-    // SWUpdate's built-in webserver listens for POSTs on /upload
+    const xhr = new XMLHttpRequest();
+    xhr.timeout = 0; // Disable timeout during long flash operations
+
     xhr.open('POST', '/upload', true);
 
     xhr.upload.onprogress = (e) => {
         if (e.lengthComputable) {
             const percent = (e.loaded / e.total) * 100;
             progressBar.style.width = percent + '%';
-            statusText.innerText = `Uploading: ${Math.round(percent)}%`;
+            if (percent < 100) {
+                statusText.innerText = `Uploading: ${Math.round(percent)}%`;
+            } else {
+                statusText.innerText = isExtension
+                    ? 'Upload complete. Applying system extension...'
+                    : 'Upload complete. Flashing image to disk...';
+            }
         }
     };
 
     xhr.onload = () => {
         if (xhr.status === 200) {
-            statusText.innerText = 'Update installed successfully! Rebooting...';
+            // Tailor the success message based on image type
+            if (isExtension) {
+                statusText.innerText = 'Extension installed successfully!';
+            } else {
+                statusText.innerText = 'Update installed successfully! Rebooting...';
+            }
+
             statusText.style.color = 'var(--success-color)';
             progressBar.style.backgroundColor = 'var(--success-color)';
+
+            // Re-enable inputs for extension installs since no reboot occurs
+            if (isExtension) {
+                uploadBtn.disabled = false;
+                fileInput.disabled = false;
+            }
         } else {
-            statusText.innerText = `Update failed: ${xhr.statusText}`;
+            statusText.innerText = `Update failed: HTTP ${xhr.status}`;
             statusText.style.color = 'var(--error-color)';
             progressBar.style.backgroundColor = 'var(--error-color)';
             uploadBtn.disabled = false;
@@ -54,7 +80,10 @@ uploadBtn.addEventListener('click', () => {
         statusText.innerText = 'Network error during upload.';
         statusText.style.color = 'var(--error-color)';
         progressBar.style.backgroundColor = 'var(--error-color)';
+        uploadBtn.disabled = false;
+        fileInput.disabled = false;
     };
 
-    xhr.send(file);
+    // 2. Send the FormData instance
+    xhr.send(formData);
 });

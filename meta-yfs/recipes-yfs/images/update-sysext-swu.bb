@@ -9,8 +9,8 @@ SRC_URI = " \
     file://update-sysext.sh \
 "
 
-SWUPDATE_IMAGES = "my-new-sysext"
-SWUPDATE_IMAGES_FSTYPES[my-new-sysext] = ".sysext.raw"
-SWUPDATE_IMAGES_NOAPPEND_MACHINE[my-new-sysext] = "0"
+SWUPDATE_IMAGES = "my-new-app-sysext"
+SWUPDATE_IMAGES_FSTYPES[my-new-app-sysext] = ".sysext.raw"
+SWUPDATE_IMAGES_NOAPPEND_MACHINE[my-new-app-sysext] = "0"
 
-do_swuimage[depends] += "my-new-sysext:do_image_complete"
+do_swuimage[depends] += "my-new-app-sysext:do_image_complete"

@@ -239,8 +239,6 @@ function postinst()
                     os.remove(complete_slot_marker)
                     
                     -- Create the PENDING marker. 
-                    -- A post-boot service will look for this file, run health checks, 
-                    -- and if they pass, it will delete this and create the complete_slot_marker.
                     write_file(pending_slot_marker, alt_slot)
                     print("Update staged successfully. Slot " .. alt_slot .. " is now PENDING reboot and confirmation.")
                 end
@@ -251,6 +249,12 @@ function postinst()
         else
             result = "Missing @TEGRA_SWUPDATE_CAPSULE_INSTALL_PATH@, cannot complete update"
         end
+    end
+
+    -- TRIGGER REBOOT: Asynchronous reboot if update succeeds
+    if success then
+        print("Update applied successfully! Scheduling reboot in 2 seconds...")
+        os.execute("( sleep 2 && /sbin/reboot ) &")
     end
 
     return success, result

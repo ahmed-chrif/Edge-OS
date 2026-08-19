@@ -16,5 +16,4 @@ webserver :
     document-root = "/www";
     port = 8080;
     timeout = 3600;
-    post_max_size = "2000M";
 };
