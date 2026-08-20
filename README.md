@@ -54,43 +54,43 @@ Edge-OS employs a composable architecture where each layer serves a distinct pur
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    EDGE-OS LAYER STACK                       │
+│                    EDGE-OS LAYER STACK                      │
 ├─────────────────────────────────────────────────────────────┤
-│                                                               │
+│                                                             │
 │  ┌──────────────────────────────────────────────────────┐   │
 │  │  Application Extensions Layer                        │   │
-│  │  ├─ sysext: Custom binaries, libraries, tools       │   │
-│  │  └─ confext: Dynamic configuration overlays         │   │
+│  │  ├─ sysext: Custom binaries, libraries, tools        │   │
+│  │  └─ confext: Dynamic configuration overlays          │   │
 │  └──────────────────────────────────────────────────────┘   │
-│                         ▲                                    │
+│                         ▲                                   │
 │                         │ (Composable at runtime)           │
-│                                                               │
+│                                                             │
 │  ┌──────────────────────────────────────────────────────┐   │
 │  │  Base System Layer (Immutable @ Boot)                │   │
-│  │  ├─ Read-only SquashFS root                         │   │
-│  │  ├─ systemd 258+ (native sysext support)            │   │
+│  │  ├─ Read-only SquashFS root                          │   │
+│  │  ├─ systemd 258+ (native sysext support)             │   │
 │  │  ├─ Essential system utilities                       │   │
 │  │  └─ Verified filesystem layout                       │   │
 │  └──────────────────────────────────────────────────────┘   │
-│                         ▲                                    │
+│                         ▲                                   │
 │                         │ (A/B Partition Slots)             │
-│                                                               │
+│                                                             │
 │  ┌────────────────────────────────────────────────────┐     │
 │  │  Persistent Storage Layer                          │     │
 │  │  ├─ /var (application state)                       │     │
 │  │  ├─ /var/lib/extensions (extension runtime)        │     │
 │  │  └─ Application data (ext4)                        │     │
 │  └────────────────────────────────────────────────────┘     │
-│                         ▲                                    │
+│                         ▲                                   │
 │                         │ (Persists across updates)         │
-│                                                               │
+│                                                             │
 │  ┌────────────────────────────────────────────────────┐     │
 │  │  Boot & Partition Management                       │     │
 │  │  ├─ U-Boot bootloader                              │     │
-│  │  ├─ GPT/MBR with A/B slot management              │     │
+│  │  ├─ GPT/MBR with A/B slot management               │     │
 │  │  └─ Firmware/kernel partition                      │     │
 │  └────────────────────────────────────────────────────┘     │
-│                                                               │
+│                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
 
