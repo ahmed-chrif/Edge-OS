@@ -450,74 +450,302 @@ root@edge-os:~# ls -la /var/lib/extensions/
 ---
 
 ## Project Structure
-
 ```
 Edge-OS/
-├── README.md                                    # This file
-├── ARCHITECTURE.md                              # Detailed architecture guide
-├── BUILD.md                                     # Development & build processes
-├── DEPLOYMENT.md                                # OTA update & rollback strategies
-│
-├── kas/
-│   ├── edge-os.yml                             # Master KAS configuration
-│   ├── jetson-orin-nano.yml                    # Jetson-specific config
-│   ├── machines/
-│   │   └── jetson-orin-nano.conf               # Machine definition
-│   └── layers/
-│       └── layer-config.yml                    # Layer dependencies & versions
-│
-├── meta-edgeos/                                 # Custom Edge-OS layer
+├── meta-yfs/                                      # Core Edge-OS layer
+│   ├── classes/
+│   │   ├── confext-image.bbclass                  # Build systemd-confext images
+│   │   ├── discoverable-disk-image.bbclass       # Discoverable disk image support
+│   │   ├── read-only-fs.bbclass                  # Read-only / immutable filesystem configuration
+│   │   └── sysext-image.bbclass                  # Build systemd-sysext images
+│   │
 │   ├── conf/
-│   │   ├── layer.conf                          # Layer configuration
-│   │   ├── machine/                            # Machine definitions
-│   │   └── distro/                             # Distribution policies
+│   │   └── layer.conf
+│   │
+│   ├── recipes-apps/
+│   │   └── my-new-app/
+│   │       ├── files/
+│   │       │   ├── main.py
+│   │       │   └── my-new-app.service
+│   │       └── my-new-app.bb                     # Example application recipe
 │   │
 │   ├── recipes-core/
-│   │   ├── base-files/                         # Filesystem layout
-│   │   ├── systemd/
-│   │   │   ├── systemd_%.bbappend              # Backports & patches
-│   │   │   └── systemd-extensions/
-│   │   │       ├── systemd-extensions-sysext.service
-│   │   │       ├── systemd-extensions-confext.service
-│   │   │       └── extension-release.d/
-│   │   │
-│   │   └── images/
-│   │       ├── core-image-minimal.bb           # Minimal image recipe
-│   │       ├── core-image-edgeos.bb            # Full-featured image
-│   │       └── extensions/                     # Example extensions
+│   │   └── edgeos-extensions/
+│   │       ├── edgeos-extensions_1.0.bb
+│   │       └── files/
+│   │           ├── 00-edgeos.preset
+│   │           ├── edgeos-ensure-extensions.service
+│   │           ├── edgeos-extension.service
+│   │           └── generate-machine-id.service
+│   │
+│   └── recipes-yfs/
+│       ├── images/
+│       │   ├── files/
+│       │   │   └── sw-description
+│       │   ├── my-new-app-sysext.bb              # Application system extension
+│       │   ├── update-confext-swu/
+│       │   │   ├── sw-description
+│       │   │   └── update-confext.sh
+│       │   ├── update-confext-swu.bb             # Confext OTA bundle
+│       │   ├── update-sysext-swu/
+│       │   │   ├── sw-description
+│       │   │   └── update-sysext.sh
+│       │   ├── update-sysext-swu.bb              # Sysext OTA bundle
+│       │   ├── yfs-image-base.bb                 # Base Edge-OS image
+│       │   ├── yfs-image-base-swupdate.bb        # SWUpdate-enabled image
+│       │   └── yfs-swupdate-image-common.inc     # Shared SWUpdate configuration
+│       │
+│       └── recipes-confext/
+│           ├── files/
+│           │   └── my-new-app.conf
+│           ├── my-new-app-conf.bb
+│           └── my-new-app-confext.bb             # Application configuration extension
+│
+├── meta-yfs-bsp/                                  # Jetson / BSP integration
+│   ├── conf/
+│   │   └── layer.conf
+│   │
+│   ├── dynamic-layers/
+│   │   └── meta-swupdate/                        # SWUpdate integration
+│   │       └── recipes-support/
+│   │           └── swupdate/
+│   │               ├── swupdate/
+│   │               │   ├── archive.cfg
+│   │               │   ├── custom-www/
+│   │               │   │   ├── index.html
+│   │               │   │   ├── script.js
+│   │               │   │   └── style.css
+│   │               │   ├── disable-uboot.cfg
+│   │               │   ├── hash.cfg
+│   │               │   ├── part-format.cfg
+│   │               │   ├── raw.cfg
+│   │               │   ├── swupdate-web.service
+│   │               │   └── systemd.cfg
+│   │               ├── swupdate_%.bbappend
+│   │               ├── swupdate-machine-config/
+│   │               │   ├── swupdate.cfg.in
+│   │               │   ├── swupdate-genconfig.sh.in
+│   │               │   ├── swupdate-machine-config.service
+│   │               │   ├── swupdate-mods.conf.in
+│   │               │   └── swupdate-tmpfiles.conf
+│   │               ├── swupdate-machine-config_1.0.bb
+│   │               ├── tegra-swupdate.inc
+│   │               └── tegra-swupdate-script/
+│   │                   └── tegra-swupdate-script.lua.in
 │   │
 │   ├── recipes-bsp/
-│   │   ├── u-boot/
-│   │   │   └── u-boot_%.bbappend               # Bootloader customizations
-│   │   └── linux-kernel/
-│   │       └── linux-yocto_%.bbappend          # Kernel config
+│   │   ├── persistent-mount/
+│   │   │   ├── files/
+│   │   │   │   ├── format-persistent.service
+│   │   │   │   └── format-persistent.sh
+│   │   │   └── persistent-mount.bb             # Persistent data partition
+│   │   │
+│   │   └── tegra-binaries/
+│   │       ├── files/
+│   │       │   └── flash_l4t_t234_nvme_rootfs_ab.xml
+│   │       ├── tegra-storage-layout-base_%.bbappend
+│   │       └── tegra-storage-layout_%.bbappend # Jetson storage layout / A-B rootfs
 │   │
-│   └── recipes-extended/
-│       ├── swupdate/                           # OTA update framework
-│       └── additional-tools/
+│   └── recipes-connectivity/
+│       └── openssh/
+│           └── openssh_%.bbappend               # SSH configuration
 │
-├── scripts/
-│   ├── flash.sh                                # SD card flashing utility
-│   ├── update.sh                               # OTA update mechanism
-│   ├── sign-image.sh                           # Image signing (future)
-│   └── generate-sysext.sh                      # Extension creation helper
+├── meta-yfs-distro/                               # Distribution policy & system components
+│   ├── classes/
+│   │   └── meson_tags.bbclass
+│   │
+│   ├── conf/
+│   │   ├── distro/
+│   │   │   └── yfs.conf                          # Edge-OS distribution configuration
+│   │   └── layer.conf
+│   │
+│   └── recipes-core/
+│       └── systemd/
+│           ├── BACKPORT-CHANGES.md
+│           ├── systemd_258.1.bb
+│           ├── systemd_%.bbappend
+│           ├── systemd-boot_258.1.bb
+│           ├── systemd-bootconf_1.00.bb
+│           ├── systemd-boot-native_258.1.bb
+│           ├── systemd-systemctl-native_258.1.bb
+│           ├── systemd-systemctl-native_%.bbappend
+│           ├── systemd-zram-generator_1.2.1.bb
+│           ├── nativesdk-systemd-systemctl_257.6.bb
+│           ├── systemd-compat-units.bb
+│           ├── systemd-machine-units_1.0.bb
+│           ├── systemd-serialgetty.bb
+│           ├── systemd-conf_1.0.bb
+│           ├── systemd-conf/
+│           │   ├── journald.conf
+│           │   ├── logind.conf
+│           │   ├── system.conf
+│           │   ├── system.conf-qemuall
+│           │   └── wired.network
+│           ├── systemd/
+│           │   ├── patches
+│           │   ├── init
+│           │   ├── 00-create-volatile.conf
+│           │   ├── 00-hostnamed-network-user.conf
+│           │   ├── 99-default.preset
+│           │   ├── systemd-pager.sh
+│           │   ├── touchscreen.rules
+│           │   └── zram-generator.conf
+│           └── systemd-zram-generator/
+│               └── zram.conf
 │
-├── docs/
-│   ├── QUICKSTART.md                           # 15-minute setup guide
-│   ├── ARCHITECTURE_DEEP_DIVE.md               # Technical deep dive
-│   ├── EXTENSION_DEVELOPMENT.md                # Creating sysext/confext
-│   ├── OTA_UPDATE_STRATEGY.md                  # Update mechanisms
-│   ├── DEBUGGING.md                            # Troubleshooting
-│   └── DESIGN_DECISIONS.md                     # Rationale & trade-offs
+├── kas/                                           # Reproducible Yocto build configuration
+│   ├── images/
+│   │   └── dev/
+│   │       ├── core-image-base.yml
+│   │       ├── ros2-image-sdktest.yml
+│   │       └── yfs-image-base-swupdate.yml
+│   │
+│   ├── include/
+│   │   ├── base.yml
+│   │   ├── configs/
+│   │   │   ├── dev/
+│   │   │   │   ├── common.yml
+│   │   │   │   ├── debug.yml
+│   │   │   │   ├── local.yml
+│   │   │   │   ├── rm_work.yml
+│   │   │   │   └── shared.yml
+│   │   │   └── prod/
+│   │   │       ├── common.yml
+│   │   │       ├── local.yml
+│   │   │       ├── rm_work.yml
+│   │   │       └── shared.yml
+│   │   │
+│   │   ├── layers/
+│   │   │   ├── meta-python-ai.yml
+│   │   │   ├── meta-swupdate.yml
+│   │   │   ├── meta-tensorflow.yml
+│   │   │   ├── meta-virtualization.yml
+│   │   │   ├── oe.yml
+│   │   │   ├── ros2-humble.yml
+│   │   │   ├── ros2-jazzy.yml
+│   │   │   ├── stereolabs.yml
+│   │   │   ├── tegra.yml
+│   │   │   └── yfs-layer.yml
+│   │   │
+│   │   ├── machines/
+│   │   │   ├── agx-orin.yml
+│   │   │   └── orin-nano.yml
+│   │   │
+│   │   └── yfs-ros.yml
+│   │
+│   └── overrides/
+│       └── override.yml.template
 │
-├── tests/
-│   ├── unit/                                   # BitBake recipe tests
-│   ├── integration/                            # Boot & mount verification
-│   └── test-framework.sh                       # Test runner
+├── docker/                                        # Reproducible build environment
+│   ├── Dockerfile
+│   ├── build_image.bash
+│   ├── docker_wrapper.bash
+│   ├── push_image.bash
+│   └── files/
+│       ├── bashrc
+│       └── entrypoint
 │
-└── .github/
-    └── workflows/                              # CI/CD pipelines (future)
+└── README.md
 ```
+
+### Architecture at a Glance
+
+```
+                         Edge-OS
+                            │
+             ┌──────────────┴──────────────┐
+             │                             │
+        meta-yfs                     meta-yfs-bsp
+      Core OS layer                Jetson BSP layer
+             │                             │
+      ┌──────┼──────┐              ┌───────┼────────┐
+      │      │      │              │       │        │
+   Sysext  Confext  Apps         Tegra   Storage  SWUpdate
+      │      │      │              │       │        │
+      └──────┴──────┴──────────────┴───────┴────────┘
+                            │
+                     meta-yfs-distro
+                            │
+                   Distribution policies
+                       + systemd
+                            │
+                            ▼
+                         Yocto
+                            │
+                         KAS
+                            │
+                            ▼
+                  Jetson Orin Nano NVMe
+                            │
+             ┌──────────────┴──────────────┐
+             │                             │
+        Immutable Core              Mutable Extensions
+             │                             │
+       SquashFS RootFS             systemd-sysext
+       A/B partitions              systemd-confext
+             │                             │
+             └──────────────┬──────────────┘
+                            │
+                         SWUpdate
+                            │
+                     Atomic OTA updates
+```
+
+### Layer Responsibilities
+
+| Layer             | Responsibility                                                                                     |
+| ----------------- | -------------------------------------------------------------------------------------------------- |
+| `meta-yfs`        | Edge-OS core architecture, immutable filesystem, sysext/confext, applications and extension images |
+| `meta-yfs-bsp`    | NVIDIA Jetson integration, storage layout, persistent partition, SSH and SWUpdate/boot integration |
+| `meta-yfs-distro` | Distribution policy, systemd integration, configuration and required backports                     |
+| `kas`             | Reproducible build composition, machines, layers and development/production configurations         |
+| `docker`          | Reproducible Yocto build environment                                                               |
+
+### Update Model
+
+Edge-OS separates software according to its lifecycle:
+
+```text
+┌──────────────────────┐
+│      Core OS         │
+│   Immutable RootFS   │
+│      SquashFS        │
+└──────────┬───────────┘
+           │
+           │ SWUpdate
+           ▼
+      A/B Slot Switch
+           │
+           ▼
+┌──────────────────────┐
+│     Application      │
+│     systemd-sysext   │
+└──────────┬───────────┘
+           │
+           │ SWUpdate
+           ▼
+      Extension Replace
+
+┌──────────────────────┐
+│    Configuration     │
+│    systemd-confext   │
+└──────────┬───────────┘
+           │
+           │ SWUpdate
+           ▼
+      Configuration Replace
+
+┌──────────────────────┐
+│    Persistent Data   │
+│       /var/data      │
+└──────────────────────┘
+           │
+           ▼
+         PRESERVE
+```
+
+This structure keeps the **core operating system**, **hardware/BSP integration**, **distribution policy**, **applications**, **configuration**, and **OTA mechanism** separated into clear Yocto layers and components.
+
 
 ---
 
