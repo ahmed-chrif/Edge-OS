@@ -1,0 +1,17 @@
+header:
+  version: 14
+  includes:
+    - kas/include/base.yml
+    - kas/include/machines/orin-nano.yml          # <-- ADD THIS LINE
+    - kas/include/layers/tegra.yml
+    - kas/include/layers/meta-swupdate.yml
+    - kas/include/layers/yfs-layer.yml
+    - kas/include/configs/dev/common.yml
+
+machine: jetson-orin-nano-devkit-nvme             # <-- ADD THIS LINE
+
+target:
+  - yfs-image-base-swupdate
+local_conf_header:
+  swupdate_config: |
+    IMAGE_INSTALL:append = " swupdate swupdate-client swupdate-machine-config"

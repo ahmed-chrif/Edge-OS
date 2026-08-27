@@ -11,6 +11,8 @@ Before=shutdown.target initrd-switch-root.target
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=/bin/systemctl daemon-reload
+# ADD THIS LINE: This reads the Yocto presets and creates the /etc symlinks in the ephemeral overlay
+ExecStart=/bin/systemctl preset-all
 ExecStart=/bin/systemctl restart --no-block sockets.target timers.target paths.target multi-user.target
 
 [Install]

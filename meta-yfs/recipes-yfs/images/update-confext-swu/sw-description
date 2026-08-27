@@ -1,0 +1,21 @@
+{
+  "software": {
+    "version": "1.0",
+    "hardware-compatibility": [
+      "1.0"
+    ],
+    "files": [
+      {
+        "filename": "my-new-app-confext-jetson-orin-nano-devkit-nvme.confext.raw",
+        "path": "/var/lib/confexts/my-new-app-v2.confext.raw"
+      }
+    ],
+    "scripts": [
+      {
+        "filename": "update-confext.sh",
+        "type": "shellscript",
+        "location": "postinstall"
+      }
+    ]
+  }
+}

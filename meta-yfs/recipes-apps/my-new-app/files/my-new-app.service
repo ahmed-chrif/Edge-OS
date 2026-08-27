@@ -1,0 +1,15 @@
+[Unit]
+Description=EdgeOS Application Web Service
+After=network.target local-fs.target edgeos-extension.service
+Requires=edgeos-extension.service
+
+[Service]
+Type=simple
+WorkingDirectory=/usr/lib/my-new-app
+ExecStartPre=/bin/sh -c 'if [ ! -f /tmp/demo.txt ]; then touch /tmp/demo.txt; fi'
+ExecStart=/usr/bin/python3 /usr/lib/my-new-app/main.py
+Restart=always
+RestartSec=3s
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,15 @@
+[Unit]
+Description=SWUpdate Web Server Interface
+After=network-online.target format-persistent.service swupdate-machine-config.service
+Requires=swupdate-machine-config.service
+Conflicts=swupdate.service
+
+[Service]
+Type=simple
+WorkingDirectory=/tmp
+ExecStart=/usr/bin/swupdate -v -f /run/swupdate/swupdate.cfg -w "-r /www -p 8080 -t 3600"
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
