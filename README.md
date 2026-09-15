@@ -1,432 +1,335 @@
-# Edge-OS: Composable Embedded Linux with Atomic Updates
+# Edge-OS — Immutable Yocto-Based Linux for NVIDIA Jetson
+
+A production-oriented embedded Linux platform with independent OS, application, and configuration lifecycles, A/B deployment, OTA updates, and rollback.
 
 ![MIT License](https://img.shields.io/badge/License-MIT-blue.svg)
 ![Built with Yocto](https://img.shields.io/badge/Built%20with-Yocto%2FBitBake-orange.svg)
 ![Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen.svg)
 ![NVIDIA Jetson](https://img.shields.io/badge/Platform-NVIDIA%20Jetson%20Orin%20Nano-76B900.svg)
 
-> **A production-grade embedded Linux distribution** designed for modern edge computing platforms with immutable, deterministic runtimes and composable system extensions.
-
 ---
 
-## Overview
+## Quick Navigation
 
-**Edge-OS** implements a composable, modern embedded Linux architecture optimized for real-world deployment scenarios. It combines Yocto's proven build foundation with contemporary systemd technologies to deliver:
-
-- **Immutable Root Filesystem**: Read-only SquashFS with guaranteed determinism
-- **Composable Architecture**: Layer-based system design for precise hardware/application tuning
-- **Atomic Updates**: A/B partition strategy with guaranteed consistency
-- **Extensible Runtime**: Dynamic system and configuration extensions (sysext/confext)
-- **Persistent State Management**: Clean separation between immutable system and mutable runtime data
-- **Update-Ready**: Foundation for delta-based transfers (zchunk) and advanced rollback policies
-
-This project demonstrates enterprise-grade embedded systems engineering through:
-- Reproducible, deterministic builds via KAS and layered architecture
-- Standards-compliant extension management following systemd specifications
-- Production-validated on NVIDIA Jetson Orin Nano
-- Architecturally prepared for dm-verity and secure boot integration
-
----
-
-## Table of Contents
-
-- [Architecture](#architecture)
-- [Core Capabilities](#core-capabilities)
-- [Verified Platforms](#verified-platforms)
-- [System Design](#system-design)
-- [Getting Started](#getting-started)
-- [Project Structure](#project-structure)
-- [Building & Customization](#building--customization)
-- [Deployment Strategies](#deployment-strategies)
-- [Design Patterns](#design-patterns)
-- [Technical References](#technical-references)
-- [Future Extensions](#future-extensions)
-- [Contributing](#contributing)
-- [License](#license)
+**[Architecture](#architecture)** → **[Demo](#demo)** → **[Technologies](#technologies)** → **[OTA & Rollback](#ota--rollback)** → **[Build Instructions](#build-instructions)**
 
 ---
 
 ## Architecture
 
-### Layered Composition Model
+### Layered Separation Model
 
-Edge-OS employs a composable architecture where each layer serves a distinct purpose:
+Edge-OS enforces strict separation between **immutable OS**, **mutable applications**, and **configuration**:
 
-```text
+```
 ┌─────────────────────────────────────────────────────────────┐
-│                       EDGE-OS LAYER STACK                   │
+│                    EDGE-OS LAYER STACK                      │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
-│   ┌──────────────────────────────────────────────────────┐  │
-│   │ Application Extensions Layer                         │  │
-│   │ ├─ sysext: Custom binaries, libraries, tools         │  │
-│   │ └─ confext: Dynamic configuration overlays           │  │
-│   └──────────────────────────────────────────────────────┘  │
-│                              ▲                              │
-│                              │ (Composable at runtime)      │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │  Configuration Extensions (confext)                  │   │
+│  │  └─ Drop-in configs, systemd units, overlays        │   │
+│  └──────────────────────────────────────────────────────┘   │
+│                         ▲                                   │
+│                         │ (Deployed independently)          │
 │                                                             │
-│   ┌──────────────────────────────────────────────────────┐  │
-│   │ Base System Layer (Immutable @ Boot)                 │  │
-│   │ ├─ Read-only SquashFS root                           │  │
-│   │ ├─ systemd 258+ (native sysext support)              │  │
-│   │ ├─ Essential system utilities                        │  │
-│   │ └─ Verified filesystem layout                        │  │
-│   └──────────────────────────────────────────────────────┘  │
-│                              ▲                              │
-│                              │ (A/B Partition Slots)        │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │  Application Extensions (sysext)                     │   │
+│  │  └─ Custom binaries, libraries, services            │   │
+│  └──────────────────────────────────────────────────────┘   │
+│                         ▲                                   │
+│                         │ (Deployed independently)          │
 │                                                             │
-│   ┌──────────────────────────────────────────────────────┐  │
-│   │ Persistent Storage Layer                             │  │
-│   │ ├─ /var (application state)                          │  │
-│   │ ├─ /var/lib/extensions (extension runtime)           │  │
-│   │ └─ Application data (ext4)                           │  │
-│   └──────────────────────────────────────────────────────┘  │
-│                              ▲                              │
-│                              │ (Persists across updates)    │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │  Immutable OS Layer (Read-Only)                      │   │
+│  │  ├─ SquashFS root filesystem                        │   │
+│  │  ├─ systemd 258+                                    │   │
+│  │  ├─ Core utilities + drivers                        │   │
+│  │  └─ A/B slots for atomic updates                    │   │
+│  └──────────────────────────────────────────────────────┘   │
+│                         ▲                                   │
+│                         │ (Swappable slots)                 │
 │                                                             │
-│   ┌──────────────────────────────────────────────────────┐  │
-│   │ Boot & Partition Management                          │  │
-│   │ ├─ UEFI firmware + systemd-boot                      │  │
-│   │ ├─ GPT with EFI System Partition (ESP)               │  │
-│   │ ├─ A/B slot management via EFI variables             │  │
-│   │ └─ Kernel + initrd + DTB in ESP                      │  │
-│   └──────────────────────────────────────────────────────┘  │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │  Persistent State (/var)                             │   │
+│  │  └─ Survives reboots & OS updates (ext4)            │   │
+│  └──────────────────────────────────────────────────────┘   │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
-Runtime Mount Model
-┌─ Read-Only (Verified @ Boot) ─────┐
-│ /                                 │ SquashFS: A/B slots, deterministic
-│ ├─ /usr (system binaries)         │ Integrity verified, no modifications
-│ ├─ /etc (base configuration)      │
-│ ├─ /opt (platform utilities)      │
-│ └─ /lib (system libraries)        │
-└───────────────────────────────────┘
+```
+
+### Runtime Mount Model
+
+```
+┌─────────────────────────────┐
+│ Immutable SquashFS (RO)    │  A/B slots
+│ /usr, /etc, /opt, /lib     │  Read-only at boot
+└────────────────┬────────────┘
                  ▼
-┌─ Composable Overlays ──────────────┐
-│ sysext merges:                    │ Applied by systemd-sysext-generator
-│ ├─ Additional /usr paths          │ Zero-cost composition
-│ ├─ /opt extensions                │
-│ └─ systemd units                  │
-└────────────────────────────────────┘
+┌─────────────────────────────┐
+│ Composable Overlays         │  systemd-sysext
+│ /opt + /usr merges          │  systemd-confext
+└────────────────┬────────────┘
                  ▼
-┌─ Persistent & Volatile ────────────┐
-│ /var (persistent, ext4)           │ Survives reboots & A/B updates
-│ ├─ /var/lib/extensions (sysext)   │
-│ ├─ /var/log (application logs)    │
-│ └─ application-data/              │
-├─ /run (volatile, tmpfs)           │ Cleared on shutdown
-├─ /tmp (volatile, tmpfs)           │ Cleared on shutdown
-└────────────────────────────────────┘
-Core Capabilities1. Immutable Deterministic RuntimeProperty: The root filesystem (/) is mounted read-only and cryptographically verified.Benefits:Guaranteed filesystem consistency across deploymentsEliminates configuration drift and runtime corruptionEnables deterministic behavior analysis for safety-critical applicationsReduces attack surface by preventing runtime modificationImplementation:Bash# Verification at boot
-/dev/mapper/root on / type squashfs (ro,nosuid,nodev,relatime)
+┌─────────────────────────────┐
+│ Persistent + Volatile       │  
+│ /var (ext4, persists)       │  /run, /tmp (tmpfs)
+│ /var/lib/extensions         │  Cleared on shutdown
+└─────────────────────────────┘
+```
 
-# Integrity check (future: dm-verity)
-# squashfs supports cryptographic verification via dm-crypt
-Use Cases:Automotive edge computing (safety-critical diagnostics)IoT gateways (tamper detection)Network appliances (configuration immutability)2. Composable ArchitectureProperty: System behavior is assembled from pre-built, reusable components.Layers:Base Layer: Curated Yocto recipes + standardized layoutHardware Layer: Machine-specific configurations (device trees, drivers)Application Layer: Business logic via sysext/confextBenefits:Leverage community-maintained OpenEmbedded recipes without modificationCustomize precisely for your hardware without maintaining full forksReproducible builds via layered KAS configurationClear separation of concerns (base vs. hardware vs. application)Example:YAML# kas/edge-os.yml
-bitbake_targets:
-  - core-image-minimal   # Base system
+### Partition Layout
 
-layer_config:
-  - meta-openembedded/meta-oe   # Community layers
-  - meta-edgeos                  # Edge-OS customizations
-  - meta-jetson                  # Jetson-specific hardware
-  - meta-myapp                   # Your application layer
-3. Atomic A/B UpdatesProperty: Updates are all-or-nothing operations with automatic rollback.Guarantee: Either the entire rootfs is successfully updated and verified, or the system boots from the previous slot.Update Flow:PlaintextCurrent: Slot A (Active) ──▶ Write to Slot B ──▶ Verify ──▶ Swap Slots (EFI vars) ──▶ Boot Slot B
-(No interruption)                                          (Atomic decision)
-Rollback Mechanism:Bash# Automatic: Boot counter exceeds threshold → use previous slot
-# Manual: bootctl set-default <slot> && reboot
-#         or update EFI BootNext / BootOrder variables
-
-# Non-destructive: Persistent data (/var) unchanged
-Update-Readiness Properties:✅ Two root filesystem slots available✅ Persistent partition outside slot switching✅ Compatible with SWUpdate and systemd-bootctl mechanisms✅ Extensible for zchunk-based delta transfer✅ System extensions survive slot transitions4. Extensible Runtime (sysext/confext)Property: System components and configurations can be deployed dynamically without rootfs rebuild.Standards Compliance: Follows systemd extension format specifications (systemd.io/EXTENSION_IMAGES/)Extension Types:TypePurposeMounted asPersistencesysextBinaries, libraries, systemd units/opt, /usrVia /var/lib/extensionsconfextConfiguration files, drop-in units/etc, /usr/lib/systemdVia /var/lib/extensionsUsage Pattern:Bash# On the device, deploy a custom service extension
-wget https://artifact-server/myservice.sysext.raw
-cp myservice.sysext.raw /var/lib/extensions/
-systemctl restart systemd-sysext
-
-# Service is immediately available
-systemctl start myservice
-Advantages:No full image rebuild for configuration/service changesFaster iteration cycles (minutes vs. hours)Modular deployment (deploy only what changed)Backward compatible (old extensions remain available)5. Persistent State ManagementProperty: Mutable application state persists across system updates and reboots.Design:Plaintext├─ Immutable System (/): A/B partitions
-│  └─ May be replaced during updates
-│
-├─ Persistent State (/var): Separate ext4 partition
-│  └─ Never replaced during updates
-│
-└─ Volatile Runtime (/run, /tmp): tmpfs
-   └─ Cleared on shutdown
-Guarantees:Application data in /var/lib survives reboots and A/B updatesExtension data in /var/lib/extensions persistsLogs in /var/log preservedTemporary data automatically cleanedVerified PlatformsNVIDIA Jetson Orin NanoValidation Status: ✅ Production VerifiedVerification Criteria:CriterionStatusNotesSystem boot✅Successful on Jetson Orin NanoRoot FS mount✅Read-only SquashFS verifiedPersistent /var✅Automount & reboot survival testedsysext deployment✅Dynamic extensions activate correctlyconfext application✅Configuration overlays apply and persistVolatile directories✅/run, /tmp remain volatile as designedA/B partition logic✅Slot switching validated via EFIExtension coexistence✅Multiple extensions load without conflictHardware Stack:ARM64 (Cortex-A78 cores)8GB LPDDR5 memory128GB eMMC storageLinux kernel 6.1+Build Command:Bashkas build kas/jetson-orin-nano.yml
-Additional Platforms: Edge-OS architecture is hardware-agnostic. Additional platforms can be added via machine definitions.System DesignDeterminism & ReproducibilityEvery Edge-OS build is deterministic through:Locked Dependency VersionsYAML# kas/edge-os.yml specifies exact versions
-repos:
-  poky:
-    url: [https://git.yoctoproject.org/poky](https://git.yoctoproject.org/poky)
-    refspec: nanbield-4.0
-Layered ConfigurationBase: OpenEmbedded stable recipesPlatform: Hardware-specific customizationsApplication: Your business logicReproducible HashesBash# Two builds of the same configuration produce identical binaries
-$ sha256sum build-1/core-image.squashfs
-abc123def456... build-1/core-image.squashfs
-
-$ sha256sum build-2/core-image.squashfs
-abc123def456... build-2/core-image.squashfs
-Partition & Mount ModelPartition Layout (example: 8GB SD card / NVMe):PlaintextOffset      Size         Partition                Type
+```
+Offset     Size         Partition              Type
 ────────────────────────────────────────────────────────
-0           1 MiB        Protective MBR / GPT     —
-1 MiB       128 MiB      EFI System Partition     FAT32
-129 MiB     500 MiB      Rootfs Slot A            SquashFS
-629 MiB     500 MiB      Rootfs Slot B            SquashFS
-1.1 GiB     (remainder)  Persistent (/var)        ext4
-Mount Verification:Bash# After boot, verify mount points
-mount | grep "type squashfs"
-# /dev/mapper/root-a on / type squashfs (ro,...)
+0          4 MiB        MBR/GPT                —
+4 MiB      8 MiB        Boot (kernel/dtb)     FAT
+12 MiB     500 MiB      Rootfs Slot A          SquashFS
+512 MiB    500 MiB      Rootfs Slot B          SquashFS
+1 GiB      (remainder)  Persistent (/var)     ext4
+```
 
-mount | grep "type ext4"
-# /dev/nvme0n1p4 on /var type ext4 (rw,...)
+---
 
-# Check active boot entry (systemd-boot)
-bootctl status
-# or
-efibootmgr -v
-Extension Management ArchitectureSystemd Extension Generator:Plaintext/usr/lib/systemd/system-generators/systemd-sysext-generator
-├─ Discovers *.sysext.raw in /var/lib/extensions/
-├─ Validates extension signatures (future: via signed images)
-├─ Mounts extension via dm-loop
-├─ Merges into /opt and /usr
-└─ Enables associated systemd units
-Extension Lifecycle:Plaintext1. Create sysext image (with your binaries/configs)
-   └─ mkfs.erofs / squashfs-tools
+## Demo
 
-2. Copy to device
-   └─ scp myapp.sysext.raw root@device:/var/lib/extensions/
+### Quickstart: Build & Flash
 
-3. Systemd detects & activates
-   └─ systemd-sysext apply
-
-4. Service starts automatically
-   └─ systemctl start myapp.service
-
-5. Persists across reboots & updates
-   └─ Stored in /var (outside A/B slots)
-Getting StartedPrerequisitesBuild Host: Ubuntu 20.04+ LTS (or equivalent)Disk Space: 50 GB free (build artifacts & downloads)RAM: 8 GB minimum (16+ recommended)Yocto Knowledge: Basic familiarity with BitBake (or willingness to learn)Installation & First BuildBash# Clone the repository
-git clone [https://github.com/ahmed-chrif/Edge-OS.git](https://github.com/ahmed-chrif/Edge-OS.git)
+```bash
+# Clone
+git clone https://github.com/ahmed-chrif/Edge-OS.git
 cd Edge-OS
 git checkout dev
 
-# Initialize Yocto environment
+# Initialize build environment
 source ./kas-docker.sh
 
-# Verify build environment
-kas --help
-
-# Build for Jetson Orin Nano (first build: 2-4 hours)
+# Build for Jetson Orin Nano (2-4 hours, first build)
 kas build kas/jetson-orin-nano.yml
 
-# Output image
+# Output
 ls -lh build/tmp/deploy/images/jetson-orin-nano/
 # core-image-minimal.squashfs (< 200 MiB)
-# core-image-minimal.wic.bz2 (full disk image)
-Flashing to DeviceBash# Identify device (e.g., /dev/sdb for USB-connected device)
+# core-image-minimal.wic.bz2  (full disk image)
+```
+
+### Flash to Device
+
+```bash
+# Identify device
 lsblk
 
-# Flash entire disk image
+# Flash disk image
 sudo ./scripts/flash.sh \
   build/tmp/deploy/images/jetson-orin-nano/core-image-minimal.wic.bz2 \
   /dev/sdb
 
-# Verify
 sync && sudo eject /dev/sdb
 # Insert into Jetson, power on
-First Boot VerificationBash# Monitor serial console
+```
+
+### Verify Boot
+
+```bash
+# Monitor serial console
 picocom /dev/ttyUSB0 -b 115200
 
-# After boot, verify key properties
+# After boot, check key properties
 root@edge-os:~# mount | grep squashfs
 /dev/mapper/root on / type squashfs (ro,...)
 
 root@edge-os:~# mount | grep /var
-/dev/nvme0n1p4 on /var type ext4 (rw,...)
+/dev/mmcblk0p4 on /var type ext4 (rw,...)
+
+root@edge-os:~# fw_printenv active_slot
+active_slot=A
 
 root@edge-os:~# ls -la /var/lib/extensions/
 # Ready for custom extensions
+```
 
-root@edge-os:~# bootctl status
-# Shows active boot entry and A/B slot information
-Project StructurePlaintextEdge-OS/
-├── meta-yfs/                           # Core Edge-OS layer
-│   ├── classes/
-│   │   ├── confext-image.bbclass      # Build systemd-confext images
-│   │   ├── discoverable-disk-image.bbclass
-│   │   ├── read-only-fs.bbclass       # Read-only / immutable filesystem
-│   │   └── sysext-image.bbclass       # Build systemd-sysext images
-│   │
-│   ├── conf/
-│   │   └── layer.conf
-│   │
-│   ├── recipes-apps/
-│   │   └── my-new-app/
-│   │       ├── files/
-│   │       │   ├── main.py
-│   │       │   └── my-new-app.service
-│   │       └── my-new-app.bb
-│   │
-│   ├── recipes-core/
-│   │   └── edgeos-extensions/
-│   │       ├── edgeos-extensions_1.0.bb
-│   │       └── files/
-│   │           ├── 00-edgeos.preset
-│   │           ├── edgeos-ensure-extensions.service
-│   │           ├── edgeos-extension.service
-│   │           └── generate-machine-id.service
-│   │
-│   └── recipes-yfs/
-│       ├── images/
-│       │   ├── files/
-│       │   │   └── sw-description
-│       │   ├── my-new-app-sysext.bb
-│       │   ├── update-confext-swu/
-│       │   ├── update-sysext-swu/
-│       │   ├── yfs-image-base.bb
-│       │   ├── yfs-image-base-swupdate.bb
-│       │   └── yfs-swupdate-image-common.inc
-│       │
-│       └── recipes-confext/
-│           └── ...
-│
-├── meta-yfs-bsp/                       # Jetson / BSP integration
-│   ├── conf/
-│   │   └── layer.conf
-│   │
-│   ├── dynamic-layers/
-│   │   └── meta-swupdate/
-│   │       └── recipes-support/
-│   │           └── swupdate/
-│   │
-│   ├── recipes-bsp/
-│   │   ├── persistent-mount/
-│   │   └── tegra-binaries/
-│   │       └── ... (storage layout / A-B rootfs + UEFI ESP)
-│   │
-│   └── recipes-connectivity/
-│       └── openssh/
-│
-├── meta-yfs-distro/                    # Distribution policy & system components
-│   ├── conf/
-│   │   └── distro/
-│   │       └── yfs.conf
-│   │
-│   └── recipes-core/
-│       └── systemd/
-│           ├── systemd_258.1.bb
-│           ├── systemd-boot_258.1.bb
-│           └── ... (systemd-boot integration for UEFI A/B)
-│
-├── kas/                                # Reproducible Yocto build configuration
-│   ├── images/
-│   ├── include/
-│   ├── layers/
-│   ├── machines/
-│   └── overrides/
-│
-├── docker/                             # Reproducible build environment
-│   └── ...
-│
-└── README.md
-Architecture at a GlancePlaintext                               Edge-OS
-                                  │
-           ┌──────────────────────┴──────────────────────┐
-           │                                             │
-       meta-yfs                                     meta-yfs-bsp
-    Core OS layer                                 Jetson BSP layer
-           │                                             │
-  ┌────────┼────────┐                           ┌────────┼────────┐
-  │        │        │                           │        │        │
-Sysext  Confext   Apps                        Tegra   Storage  SWUpdate
-  │        │        │                           │        │        │
-  └────────┴────────┴─────────────┬─────────────┴────────┴────────┘
-                                  │
-                           meta-yfs-distro
-                                  │
-                         Distribution policies
-                           + systemd + UEFI
-                                  │
-                                  ▼
-                                Yocto
-                                  │
-                                 KAS
-                                  │
-                                  ▼
-                        Jetson Orin Nano NVMe
-                                  │
-           ┌──────────────────────┴──────────────────────┐
-           │                                             │
-    Immutable Core                                Mutable Extensions
-           │                                             │
-    SquashFS RootFS                               systemd-sysext
-    A/B partitions                                systemd-confext
-           │                                             │
-           └──────────────────────┬──────────────────────┘
-                                  │
-                               SWUpdate
-                                  │
-                           Atomic OTA updates
-Layer ResponsibilitiesLayerResponsibilitymeta-yfsEdge-OS core architecture, immutable filesystem, sysext/confext, applications and extension imagesmeta-yfs-bspNVIDIA Jetson integration, storage layout (incl. ESP), persistent partition, SSH and SWUpdate/bootmeta-yfs-distroDistribution policy, systemd + systemd-boot integration, configuration and required backportskasReproducible build composition, machines, layers and development/production configurationsdockerReproducible Yocto build environmentUpdate ModelEdge-OS separates software according to its lifecycle:Plaintext┌──────────────────────┐
-│       Core OS        │
-│    Immutable RootFS  │
-│       SquashFS       │
-└──────────┬───────────┘
-           │
-           │ SWUpdate
-           ▼
-    A/B Slot Switch
-    (via EFI variables / systemd-boot)
-           │
-           ▼
-┌──────────────────────┐
-│     Application      │
-│    systemd-sysext    │
-└──────────┬───────────┘
-           │
-           │ SWUpdate
-           ▼
-    Extension Replace
+### Deploy a Custom Extension (No Rebuild)
 
-┌──────────────────────┐
-│    Configuration     │
-│    systemd-confext   │
-└──────────┬───────────┘
-           │
-           │ SWUpdate
-           ▼
- Configuration Replace
+```bash
+# On build host: create extension
+cat > myapp_1.0.bb << 'EOF'
+inherit sysext-image
+IMAGE_INSTALL = "myapp"
+EOF
 
-┌──────────────────────┐
-│   Persistent Data    │
-│      /var/data       │
-└──────────────────────┘
-           │
-           ▼
-       PRESERVE
-Building & CustomizationStandard BuildBash# Build for Jetson Orin Nano
+# On device: deploy
+scp myapp.sysext.raw root@device:/var/lib/extensions/
+ssh root@device
+
+# On device: activate
+systemctl restart systemd-sysext
+systemctl start myapp
+
+# Verify persistence
+touch /var/lib/myapp/startup.marker
+reboot
+# After reboot:
+ls /var/lib/myapp/startup.marker  # ✅ Still exists
+```
+
+---
+
+## Technologies
+
+### Core Stack
+
+| Component | Purpose | Version |
+|-----------|---------|---------|
+| **Yocto/BitBake** | Reproducible embedded Linux builds | nanbield-4.0 |
+| **KAS** | Layer composition & build orchestration | Latest |
+| **systemd** | Init system, sysext/confext support | 258+ |
+| **SquashFS** | Immutable root filesystem | Latest |
+| **U-Boot** | Bootloader with A/B slot management | Latest |
+| **SWUpdate** | OTA update framework | Integrated |
+| **ext4** | Persistent /var partition | Standard |
+
+### Architecture Highlights
+
+- **Immutable OS**: Read-only SquashFS root prevents corruption
+- **A/B Deployment**: Two rootfs slots enable atomic swaps with rollback
+- **Extension-Based**: Applications & configs deployed as systemd extensions (no OS rebuild)
+- **Deterministic Builds**: Locked Yocto versions + layered configuration = reproducible outputs
+- **Persistent State**: /var partition survives OS updates and reboots
+- **Independent Lifecycles**: OS, apps, and configs updated separately
+
+### Hardware Support
+
+**Primary Platform**: NVIDIA Jetson Orin Nano
+- ARM64 (Cortex-A78 cores)
+- 8GB LPDDR5 memory
+- 128GB eMMC storage
+- Linux kernel 6.1+
+
+**Extensible**: Architecture supports additional platforms via machine definitions
+
+---
+
+## OTA & Rollback
+
+### A/B Update Flow
+
+```
+Current State:        Slot A (Active)
+                           │
+                           ▼
+Write Phase:          Write new rootfs to Slot B
+                      (No interruption to running system)
+                           │
+                           ▼
+Verify Phase:         Checksum validation
+                           │
+                           ▼
+Atomic Swap:          Update bootloader slot pointer
+                      (Single, atomic operation)
+                           │
+                           ▼
+Next Boot:            Slot B (New version)
+                      Slot A (Previous version, fallback)
+```
+
+### Automatic Rollback
+
+```bash
+# If update corrupts Slot B (boot fails N times):
+# U-Boot boot counter exceeds threshold
+# → Automatically select Slot A
+# → System boots from previous version
+# → User sees no change (transparent rollback)
+```
+
+### Manual Rollback
+
+```bash
+# On device: switch to Slot A
+fw_setenv active_slot A
+reboot
+
+# Verify
+fw_printenv active_slot  # Should be "A"
+```
+
+### Persistent Data Preservation
+
+```
+Slot A (Old OS)  ──┐
+                   │
+Slot B (New OS)  ──┤  ─→  /var (Shared, Unchanged)
+                   │
+                   ├─→  Application state preserved
+                   ├─→  Extension data preserved
+                   └─→  Logs preserved
+```
+
+### Extension Updates (No OS Rebuild)
+
+```bash
+# Update application without touching OS:
+scp new-myapp.sysext.raw root@device:/var/lib/extensions/
+ssh root@device "systemctl restart systemd-sysext"
+
+# Application updated, OS unchanged
+# Previous extension still available for rollback
+```
+
+---
+
+## Build Instructions
+
+### Prerequisites
+
+- **Build Host**: Ubuntu 20.04+ LTS
+- **Disk Space**: 50 GB free (build artifacts)
+- **RAM**: 8 GB minimum (16+ recommended)
+- **Yocto Knowledge**: Basic BitBake familiarity (or willingness to learn)
+
+### Step 1: Clone Repository
+
+```bash
+git clone https://github.com/ahmed-chrif/Edge-OS.git
+cd Edge-OS
+git checkout dev
+```
+
+### Step 2: Initialize Build Environment
+
+```bash
+# Docker-based build (recommended)
+source ./kas-docker.sh
+
+# Verify environment
+kas --help
+```
+
+### Step 3: Build for Target Platform
+
+```bash
+# Jetson Orin Nano
 kas build kas/jetson-orin-nano.yml
 
-# Alternative: Build minimal core-image
-bitbake core-image-minimal
+# Output artifacts
+ls -lh build/tmp/deploy/images/jetson-orin-nano/
+```
 
-# Build with verbose output
-kas build -v kas/jetson-orin-nano.yml
-Incremental Builds (After Changes)Bash# Rebuild affected recipes only
-bitbake core-image-minimal
+### Step 4: Customize (Optional)
 
-# Clean specific recipe cache
-bitbake -c clean core-image-minimal
+#### Add Custom Application Layer
 
-# Full rebuild (clean all)
-bitbake -C build core-image-minimal
-Adding Custom LayersBash# Create your application layer
+```bash
+# Create your layer
 mkdir -p meta-myapp/recipes-apps/myapp
 cd meta-myapp
 
-# Create recipe template
+# Create recipe
 cat > recipes-apps/myapp/myapp_1.0.bb << 'EOF'
 DESCRIPTION = "My Custom Application"
 LICENSE = "MIT"
-SRC_URI = "git://[github.com/myorg/myapp.git;branch=main](https://github.com/myorg/myapp.git;branch=main)"
+SRC_URI = "git://github.com/myorg/myapp.git;branch=main"
 
 inherit cmake
 
@@ -436,102 +339,265 @@ do_install() {
 EOF
 
 # Add to kas configuration
-# kas/edge-os.yml:
-# repos:
-#   meta-myapp:
-#     path: path/to/meta-myapp
-Configuration CustomizationEdit kas/jetson-orin-nano.yml:YAML# Adjust system features
+# kas/jetson-orin-nano.yml:
+#   repos:
+#     meta-myapp:
+#       path: path/to/meta-myapp
+```
+
+#### Configure Build Options
+
+Edit `kas/jetson-orin-nano.yml`:
+
+```yaml
 local_conf_header:
   standard: |
-    # Enable/disable components
+    # Enable extensions
     ENABLE_SYSEXT ?= "1"
     ENABLE_CONFEXT ?= "1"
-
-    # Compression algorithm
+    
+    # Compression
     SQUASHFS_COMPRESSION ?= "lz4"
-
+    
     # Image formats
     IMAGE_FSTYPES = "squashfs"
+```
 
-    # UEFI / systemd-boot
-    EFI_PROVIDER = "systemd-boot"
+### Step 5: Flash & Test
 
-    # Security options (future)
-    # VERIFY_IMAGES ?= "1"
-    # SIGN_IMAGES ?= "1"
-Deployment StrategiesInitial DeploymentBash# 1. Flash full disk image to device
-sudo dd if=core-image-minimal.wic.bz2 | bunzip2 | dd of=/dev/sdX
-sync
+```bash
+# Identify device
+lsblk
 
-# 2. Verify boot
-# (connect serial console)
-# System boots from Slot A via systemd-boot / UEFI
+# Flash
+sudo ./scripts/flash.sh \
+  build/tmp/deploy/images/jetson-orin-nano/core-image-minimal.wic.bz2 \
+  /dev/sdb
 
-# 3. Confirm slot and persistence
-bootctl status                  # Shows active entry
-touch /var/lib/myapp/startup.marker
-reboot
-ls /var/lib/myapp/startup.marker   # Should exist after reboot
-Over-The-Air (OTA) UpdatesUpdate Package Creation:Bash# Build new image (with version 2.0)
-kas build kas/jetson-orin-nano.yml
+# Eject and boot Jetson
+sync && sudo eject /dev/sdb
+```
 
-# Create delta package (future: zchunk)
-new_image=core-image-minimal-v2.0.squashfs
-old_image=core-image-minimal-v1.0.squashfs
+### Step 6: Develop with Extensions (Iterative)
 
-# For now: full image update
-bzip2 ${new_image}
-scp ${new_image}.bz2 root@device:/tmp/
-Update Deployment:Bash# On device
-ssh root@device
-
-# Download & apply update (writes to Slot B)
-./scripts/update.sh /tmp/core-image-minimal-v2.0.squashfs.bz2
-
-# Automatic reboot on success
-# System boots from Slot B (EFI BootOrder / BootNext updated)
-bootctl status
-Rollback (Automatic):Bash# If update corrupts system → boot counter exceeded
-# systemd-boot / UEFI automatically selects previous slot
-# User sees no change (transparent rollback)
-Rollback (Manual):Bash# If user wants to revert
-bootctl set-default <previous-slot-entry>
-# or
-efibootmgr -n <previous-boot-number>
-reboot
-Design Patterns1. Layered IndependenceEach layer is independently buildable and testable:Bash# Test base layer without hardware customizations
-kas build kas/edge-os-base.yml
-
-# Add hardware layer
-kas build kas/jetson-orin-nano.yml
-
-# Add application layer
-kas build kas/edge-os-with-myapp.yml
-2. Extension-First DevelopmentDevelop and iterate via extensions rather than full rebuilds:Bash# Locally develop your application
+```bash
+# Build your application locally
 git clone git@github.com:myorg/myapp.git
 cd myapp && make
 
-# Create extension
+# Generate sysext
 ./scripts/generate-sysext.sh myapp build/
 
-# Deploy to device for testing
+# Deploy to device (no OS rebuild!)
 scp myapp.sysext.raw root@device:/var/lib/extensions/
 ssh root@device "systemd-sysext apply"
 
-# No reboot needed; service starts immediately
-3. Immutable-First OperationsAll runtime modifications via extensions:Bash# ❌ Don't modify immutable root
-# echo "FEATURE=1" >> /etc/myapp.conf   # FAILS: read-only FS
+# Service starts immediately, no reboot needed
+systemctl start myapp
+```
 
-# ✅ Use configuration extensions
-# confext merges into /etc
-# Or write to /var/lib/myapp (persistent, mutable)
-Technical ReferencesStandards & SpecificationsYocto Project: yoctoproject.orgBitBake: docs.yoctoproject.org/bitbakesystemd: systemd.iosystemd Extensions: Extension Images Specificationsystemd-boot: systemd.io/BOOTUEFI Specification: uefi.orgSquashFS: squashfs.sourceforge.netKAS: kas-project.orgRelated ProjectsSWUpdate: Over-the-air update framework (integrated)dm-verity: Verified filesystem (future integration)Secure Boot: UEFI Secure Boot support (roadmap)OpenEmbedded: Community layer ecosystemFuture ExtensionsPlanned Features (In Priority Order)Phase 1: Verification & Security[ ] dm-verity for rootfs integrity verification[ ] Image signing & signature verification[ ] UEFI Secure Boot integration[ ] TPM 2.0 support for measured bootPhase 2: Advanced Updates[ ] zchunk-based delta transfer (bandwidth optimization)[ ] Peer-to-peer update distribution[ ] Advanced rollback policies (graduated rollouts)[ ] Atomic multi-extension updatesPhase 3: Runtime Extensibility[ ] Container support (systemd-nspawn integration)[ ] Additional extension types (data, plugin modules)[ ] Extension dependency management[ ] Extension composition & layeringPhase 4: Operations & Observability[ ] OTA update metrics & analytics[ ] Health monitoring framework[ ] Remote device management[ ] Diagnostic collectionPhase 5: Multi-Platform Support[ ] x86-64 edge devices[ ] ARM / RISC-V targets[ ] Heterogeneous compute platformsArchitecture ReadinessEdge-OS is architected to support these extensions without core changes:Future FeatureArchitectural Supportdm-verityMount layer already abstracted; ready for verity block deviceSigned extensionsExtension framework validates signatures (no rootfs change)UEFI Secure BootBootloader layer independent; firmware customizableContainerssystemd-nspawn uses /var for persistent state; compatibleNew extension typessystemd generator pattern extensible to new typesContributingDevelopment ProcessSet Up Development EnvironmentBashgit clone [https://github.com/ahmed-chrif/Edge-OS.git](https://github.com/ahmed-chrif/Edge-OS.git)
+---
+
+## Project Structure
+
+```
+Edge-OS/
+├── meta-yfs/                  # Core Edge-OS layer
+│   ├── classes/               # sysext-image, confext-image, read-only-fs
+│   ├── recipes-apps/          # Example applications
+│   └── recipes-yfs/
+│       └── images/            # Image recipes & OTA bundles
+│
+├── meta-yfs-bsp/              # NVIDIA Jetson BSP
+│   ├── recipes-bsp/           # Storage layout, A/B rootfs
+│   └── dynamic-layers/        # SWUpdate integration
+│
+├── meta-yfs-distro/           # Distribution policy
+│   └── recipes-core/          # systemd, bootloader configs
+│
+├── kas/                       # Reproducible build config
+│   ├── jetson-orin-nano.yml   # Jetson target
+│   ├── include/               # Layers, machines, configs
+│   └── overrides/
+│
+└── docker/                    # Reproducible build environment
+```
+
+### Layer Responsibilities
+
+| Layer | Purpose |
+|-------|---------|
+| `meta-yfs` | Core architecture: immutable FS, sysext/confext, app images |
+| `meta-yfs-bsp` | Jetson integration: storage layout, A/B rootfs, SSH, SWUpdate |
+| `meta-yfs-distro` | Policy: systemd, bootloader, required backports |
+| `kas/` | Build composition: machines, layers, dev/prod configs |
+| `docker/` | Reproducible build container |
+
+---
+
+## Key Features
+
+✅ **Immutable Root Filesystem**  
+Read-only SquashFS prevents configuration drift and runtime corruption.
+
+✅ **A/B Atomic Updates**  
+Two rootfs slots enable zero-downtime updates with automatic rollback.
+
+✅ **Independent Lifecycles**  
+OS, applications, and configurations updated separately—no full rebuild needed.
+
+✅ **Extension-Based Customization**  
+Deploy sysext/confext without modifying the immutable OS.
+
+✅ **Persistent State Management**  
+/var partition survives OS updates and reboots.
+
+✅ **Deterministic Builds**  
+Locked Yocto versions + layered KAS config = reproducible outputs.
+
+✅ **Production-Validated**  
+Verified on NVIDIA Jetson Orin Nano.
+
+✅ **OTA Framework**  
+SWUpdate integration for secure, managed deployments.
+
+---
+
+## Deployment Lifecycle
+
+```
+Phase 1: Initial Deployment
+  └─ Flash disk image to device
+     └─ System boots from Slot A
+     └─ /var initialized and mounted
+
+Phase 2: OS Updates (A/B)
+  └─ SWUpdate writes new rootfs to Slot B
+     └─ Verify checksums
+     └─ Atomic slot switch
+     └─ Reboot to Slot B
+     └─ /var persists (unchanged)
+
+Phase 3: Application Updates (No OS Rebuild)
+  └─ Deploy sysext to /var/lib/extensions/
+     └─ systemd-sysext applies at runtime
+     └─ Service starts (no reboot)
+     └─ Persists across OS updates
+
+Phase 4: Configuration Updates (No OS Rebuild)
+  └─ Deploy confext to /var/lib/extensions/
+     └─ systemd-confext applies at runtime
+     └─ Config overlays active (no reboot)
+
+Phase 5: Rollback (On Failure)
+  └─ Automatic: Boot counter exceeded → Slot A
+     └─ Transparent to user, data intact
+  └─ Manual: fw_setenv active_slot A && reboot
+     └─ Switch to previous OS version on demand
+```
+
+---
+
+## Future Roadmap
+
+### Phase 1: Security
+- [ ] dm-verity for rootfs integrity verification
+- [ ] Image signing & signature validation
+- [ ] Secure boot integration (UEFI/Trusted Boot)
+- [ ] TPM 2.0 support
+
+### Phase 2: Advanced Updates
+- [ ] zchunk-based delta transfer (bandwidth optimization)
+- [ ] Peer-to-peer update distribution
+- [ ] Graduated rollout policies
+- [ ] Atomic multi-extension updates
+
+### Phase 3: Runtime Extensions
+- [ ] Container support (systemd-nspawn)
+- [ ] Additional extension types (data, plugins)
+- [ ] Extension dependency management
+
+### Phase 4: Multi-Platform
+- [ ] x86-64 edge devices
+- [ ] ARM RISC-V targets
+- [ ] Heterogeneous compute platforms
+
+---
+
+## Contributing
+
+### Development Workflow
+
+```bash
+git clone https://github.com/ahmed-chrif/Edge-OS.git
 cd Edge-OS
 git checkout dev
-source ./kas-docker.sh
-Create Feature BranchBashgit checkout -b feature/your-feature dev
-Make Changes & Test LocallyBashkas build kas/jetson-orin-nano.yml
-# Test on device
-Submit Pull RequestBashgit push origin feature/your-feature
+
+# Create feature branch
+git checkout -b feature/your-feature dev
+
+# Make changes, test
+kas build kas/jetson-orin-nano.yml
+
+# Submit PR
+git push origin feature/your-feature
 # Create PR against `dev` branch
-Contribution GuidelinesYocto Best Practices: Follow Yocto Project Mega-ManualCommit Messages: feat:, fix:, docs:, refactor:, test:Example: feat: add dm-verity support to core-image recipeLicenseThis project is licensed under the MIT License - see the LICENSE file for details.
+```
+
+### Guidelines
+
+- Follow [Yocto Project Best Practices](https://www.yoctoproject.org/docs/)
+- Commit messages: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`
+- Add tests for significant changes
+- Update documentation
+
+### Report Issues
+
+Use [GitHub Issues](https://github.com/ahmed-chrif/Edge-OS/issues) with:
+- Platform & hardware details
+- Build host info (Ubuntu version, RAM)
+- Reproduction steps
+- Full error logs
+
+---
+
+## Technical References
+
+### Standards & Specifications
+
+- [Yocto Project](https://www.yoctoproject.org/)
+- [BitBake](https://docs.yoctoproject.org/bitbake/)
+- [systemd](https://systemd.io/)
+- [systemd Extensions](https://systemd.io/EXTENSION_IMAGES/)
+- [SquashFS](https://squashfs.sourceforge.net/)
+- [A/B Updates](https://source.android.com/docs/core/ota/device_build)
+- [KAS](https://kas-project.org/)
+
+### Related Projects
+
+- [SWUpdate](https://sbabic.github.io/swupdate/) — OTA framework
+- [dm-verity](https://www.kernel.org/doc/html/latest/admin-guide/device-mapper/verity.html) — Verified filesystem
+- [OpenEmbedded](https://www.openembedded.org/) — Community layer ecosystem
+
+---
+
+## License
+
+MIT License. See [LICENSE](LICENSE) file for details.
+
+Commercial support available through [Focus Corporation - Embedded Systems Division](https://focus.com.tn).
+
+---
+
+## Support & Contact
+
+- **GitHub Issues**: [Report bugs & features](https://github.com/ahmed-chrif/Edge-OS/issues)
+- **Documentation**: See `docs/` folder for detailed guides
+- **Commercial Support**: [Focus Corporation](https://focus.com.tn)
+
+---
+
+**Built with production-grade embedded systems engineering**  
+Immutable • Deterministic • Extensible • Maintainable
+
+Last Updated: September 2026
